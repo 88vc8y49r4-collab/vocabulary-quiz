@@ -1,0 +1,18 @@
+# 大文件（视频、PDF）
+*.mp4
+*.pdf
+
+# 临时构建脚本
+extract_pdf.py
+parse_words.py
+build_wordbank.py
+assemble_html.py
+
+# 临时数据文件
+parsed_words.txt
+wordbank.js
+raw_words.txt
+
+# 备份/副本目录
+英语单词背诵/
+英语单词背诵 - 副本/

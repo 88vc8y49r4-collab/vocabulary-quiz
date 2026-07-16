@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背单词 - 四级核心词汇</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif; min-height: 100vh; color: #fff; position: relative; }
+/* 全屏视频背景 */
+#bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+/* 沙滩背景遮罩：保证文字清晰可读 */
+body::before { content: ''; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: -1; }
+.app { max-width: 520px; margin: 0 auto; padding: 0 16px 40px; }
+
+/* 导航栏 */
+.nav { display: flex; background: rgba(255,255,255,0.25); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 0 0 16px 16px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.10); position: sticky; top: 0; z-index: 100; }
+.nav-tab { flex: 1; text-align: center; padding: 16px 8px; cursor: pointer; font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.92); border-bottom: 3px solid transparent; transition: all 0.2s; user-select: none; }
+.nav-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+.nav-tab .badge { display: inline-block; background: #e74c3c; color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 10px; margin-left: 4px; min-width: 20px; text-align: center; }
+
+/* 单词卡片 */
+.card-area { margin-top: 32px; display: flex; flex-direction: column; align-items: center; }
+.word-card { background: rgba(255,255,255,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 20px; padding: 48px 32px 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); text-align: center; width: 100%; }
+.word-text { font-size: 36px; font-weight: bold; color: #fff; margin-bottom: 8px; letter-spacing: 1px; }
+.word-pos { font-size: 14px; color: rgba(255,255,255,0.88); margin-bottom: 12px; }
+.speak-btn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); border: 1px solid rgba(255,255,255,0.4); cursor: pointer; font-size: 24px; transition: background 0.2s; margin-bottom: 8px; }
+.speak-btn:hover { background: rgba(52,152,219,0.25); }
+.speak-btn:active { transform: scale(0.95); }
+.speak-btn.speaking { background: #3498db; color: #fff; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(52,152,219,0.4); } 50% { box-shadow: 0 0 0 16px rgba(52,152,219,0); } }
+
+/* 选项按钮 */
+.options { margin-top: 24px; width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.opt-btn { width: 100%; padding: 16px 20px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); font-size: 17px; cursor: pointer; text-align: center; color: #fff; font-family: inherit; }
+.opt-btn:hover:not(.disabled) { border-color: rgba(52,152,219,0.7); background: rgba(52,152,219,0.15); }
+.opt-btn.correct { border-color: #27ae60; background: rgba(39,174,96,0.55); color: #fff; font-weight: bold; }
+.opt-btn.wrong { border-color: #e74c3c; background: rgba(231,76,60,0.55); color: #fff; font-weight: bold; }
+.opt-btn.show-correct { border-color: #27ae60; background: rgba(39,174,96,0.55); color: #fff; font-weight: bold; }
+.opt-btn.disabled { pointer-events: none; }
+
+/* 反馈 + 继续按钮 */
+.feedback { margin-top: 20px; text-align: center; min-height: 60px; }
+.feedback .msg { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+.feedback .msg.correct-msg { color: #27ae60; }
+.feedback .msg.wrong-msg { color: #e74c3c; }
+.next-btn { padding: 12px 36px; border-radius: 25px; background: #3498db; color: #fff; border: none; font-size: 16px; cursor: pointer; font-weight: 500; font-family: inherit; transition: all 0.2s; display: none; }
+.next-btn:hover { background: #2980b9; }
+.next-btn.show { display: inline-block; }
+
+/* 搜索结果 */
+.search-box { margin-top: 24px; position: relative; }
+.search-input { width: 100%; padding: 14px 20px 14px 44px; border-radius: 24px; border: 1.5px solid rgba(255,255,255,0.4); font-size: 16px; outline: none; font-family: inherit; background: rgba(255,255,255,0.3); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); transition: border-color 0.2s; color: #fff; }
+.search-input::placeholder { color: rgba(255,255,255,0.55); }
+.search-input:focus { border-color: #3498db; }
+.search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; color: rgba(255,255,255,0.55); }
+.search-results { margin-top: 16px; }
+.search-item { background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); border-radius: 14px; padding: 16px 20px; margin-bottom: 8px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+.search-item .word-info { flex: 1; }
+.search-item .sword { font-size: 18px; font-weight: 600; color: #fff; }
+.search-item .smeaning { font-size: 15px; color: rgba(255,255,255,0.92); margin-top: 2px; }
+.search-item .splay-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.4); cursor: pointer; font-size: 18px; flex-shrink: 0; transition: background 0.2s; }
+.search-item .splay-btn:hover { background: rgba(52,152,219,0.3); }
+.no-results { text-align: center; color: rgba(255,255,255,0.82); padding: 40px 0; font-size: 15px; }
+
+/* 错题本 */
+.wrong-list { margin-top: 20px; }
+.wrong-item { background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); border-radius: 14px; padding: 16px 20px; margin-bottom: 8px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+.wrong-item .wrong-info { flex: 1; }
+.wrong-item .wrong-word { font-size: 18px; font-weight: 600; color: #fff; }
+.wrong-item .wrong-meaning { font-size: 14px; color: rgba(255,255,255,0.92); margin-top: 2px; }
+.wrong-item .wrong-count { font-size: 12px; color: #e74c3c; }
+.empty-state { text-align: center; padding: 60px 0; color: rgba(255,255,255,0.82); font-size: 15px; }
+.empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+
+/* 错题复习模式 */
+.review-badge { display: inline-block; background: #f39c12; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 13px; margin-bottom: 12px; }
+.exit-review-btn { margin-top: 10px; padding: 8px 20px; border-radius: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); color: rgba(255,255,255,0.95); border: 1px solid rgba(255,255,255,0.4); cursor: pointer; font-size: 14px; font-family: inherit; }
+.exit-review-btn:hover { background: rgba(255,255,255,0.35); }
+
+/* 底部统计 */
+.stats { margin-top: 28px; display: flex; justify-content: space-around; background: rgba(255,255,255,0.25); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 16px; padding: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+.stat-item { text-align: center; }
+.stat-num { font-size: 22px; font-weight: bold; color: #fff; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.82); margin-top: 2px; }
+
+/* 页面切换 */
+.page { display: none; }
+.page.active { display: block; }
+
+/* 提示文字 */
+.hint { font-size: 13px; color: rgba(255,255,255,0.88); text-align: center; margin-top: 16px; }
+
+/* 导航箭头 */
+.nav-arrows { position: relative; width: 100%; }
+.nav-arrow { position: absolute; top: 20px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); border: 1px solid rgba(255,255,255,0.5); cursor: pointer; font-size: 16px; color: #fff; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+.nav-arrow:hover { background: rgba(255,255,255,0.55); color: #3498db; border-color: #3498db; box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
+.nav-arrow:active { transform: scale(0.93); }
+.nav-arrow-left { left: -10px; }
+.nav-arrow-right { right: -10px; }
+.nav-arrow.hidden { visibility: hidden; }
+</style>
+</head>
+<body>
+<video id="bg-video" autoplay muted loop playsinline>
+  <source src="平潭岛的深蓝色大海海景6月11日(2)-src_hd_爱给网_aigei_com.mp4" type="video/mp4">
+</video>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-tab active" data-page="quiz">📖 背单词</div>
+    <div class="nav-tab" data-page="wrong">📝 错题本<span class="badge" id="wrong-badge" style="display:none">0</span></div>
+    <div class="nav-tab" data-page="search">🔍 搜索</div>
+  </nav>
+
+  <!-- 背单词页面 -->
+  <div class="page active" id="page-quiz">
+    <div class="card-area">
+      <div class="nav-arrows">
+        <button class="nav-arrow nav-arrow-left hidden" id="nav-prev" title="上一个单词">◀</button>
+        <button class="nav-arrow nav-arrow-right" id="nav-next" title="下一个单词">▶</button>
+        <div class="word-card" id="word-card">
+        <div class="word-text" id="word-text"></div>
+        <div class="word-pos" id="word-pos"></div>
+        <button class="speak-btn" id="speak-btn" title="播放发音">🔊</button>
+        <div class="hint">点击喇叭播放发音</div>
+      </div>
+      </div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback">
+        <div class="msg" id="feedback-msg"></div>
+        <button class="next-btn" id="next-btn">下一题 →</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-item"><div class="stat-num" id="stat-total">0</div><div class="stat-label">已答</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-correct">0</div><div class="stat-label">正确</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-rate">-</div><div class="stat-label">正确率</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-wrong-count">0</div><div class="stat-label">错题数</div></div>
+    </div>
+  </div>
+
+  <!-- 错题本页面 -->
+  <div class="page" id="page-wrong">
+    <div class="card-area" id="wrong-review-area" style="display:none;">
+      <div class="review-badge">🔁 错题复习中</div>
+      <div class="word-card" id="review-card">
+        <div class="word-text" id="review-word"></div>
+        <div class="word-pos" id="review-pos"></div>
+        <button class="speak-btn" id="review-speak-btn" title="播放发音">🔊</button>
+      </div>
+      <div class="options" id="review-options"></div>
+      <div class="feedback" id="review-feedback">
+        <div class="msg" id="review-feedback-msg"></div>
+        <button class="next-btn" id="review-next-btn">下一题 →</button>
+      </div>
+      <button class="exit-review-btn" id="exit-review-btn">退出复习模式</button>
+    </div>
+    <div class="wrong-list" id="wrong-list"></div>
+    <div class="empty-state" id="wrong-empty"><div class="emoji">🎉</div>还没有错题，继续加油！</div>
+  </div>
+
+  <!-- 搜索页面 -->
+  <div class="page" id="page-search">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" placeholder="输入英文单词或中文翻译...">
+    </div>
+    <div class="search-results" id="search-results"></div>
+    <div class="no-results" id="no-results" style="display:none;">未找到匹配的单词</div>
+  </div>
+</div>
+
+<!-- GSAP 动画库（先加载，确保后续脚本可用） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+// CET-4 核心词汇库 - 自动生成
+const WORD_BANK = [
+  {word:'abolish', phonetic:'/bl/', meaning:'废除，取消', pos:'v'},
+  {word:'above', phonetic:'/bv/', meaning:'在...上面；以上', pos:'prep'},
+  {word:'absent', phonetic:'/�bsnt/', meaning:'缺席的，不在的', pos:'a'},
+  {word:'absorb', phonetic:'/bs:b/', meaning:'吸收；吸引...的注意', pos:'v'},
+  {word:'abstract', phonetic:'/�bstr�kt/', meaning:'抽象的；摘要', pos:'n/a/a'},
+  {word:'abuse', phonetic:'/bju:z/', meaning:'滥用；虐待', pos:'v'},
+  {word:'academic', phonetic:'/�kdemk/', meaning:'学术的；学院的', pos:'a'},
+  {word:'accelerate', phonetic:'/kselret/', meaning:'加速，加快', pos:'v'},
+  {word:'accept', phonetic:'/ksept/', meaning:'接受，同意', pos:'v'},
+  {word:'accommodate', phonetic:'/kmdet/', meaning:'容纳；提供住宿；适应', pos:'v/a'},
+  {word:'accord', phonetic:'/k:d/', meaning:'一致，符合', pos:'v'},
+  {word:'accordance', phonetic:'/k:dns/', meaning:'一致，和谐', pos:'n/a'},
+  {word:'account', phonetic:'/kant/', meaning:'账户；说明；解释', pos:'n/v/a'},
+  {word:'accumulate', phonetic:'/kju:mjlet/', meaning:'积累，积聚', pos:'v'},
+  {word:'accurate', phonetic:'/�kjrt/', meaning:'准确的，精确的', pos:'a'},
+  {word:'accuse', phonetic:'/kju:z/', meaning:'指控，指责', pos:'v'},
+  {word:'accustom', phonetic:'/kstm/', meaning:'使习惯', pos:'v'},
+  {word:'acid', phonetic:'/�sd/', meaning:'酸的；酸', pos:'a/n'},
+  {word:'acknowledge', phonetic:'/knld/', meaning:'承认；确认收到', pos:'n'},
+  {word:'acquaint', phonetic:'/kwent/', meaning:'使熟悉，使认识', pos:'v'},
+  {word:'acquaintance', phonetic:'/kwentns/', meaning:'熟人；相识', pos:'n'},
+  {word:'acute', phonetic:'/kju:t/', meaning:'急性的；敏锐的；严重的', pos:'a'},
+  {word:'adapt', phonetic:'/d�pt/', meaning:'适应；改编', pos:'v'},
+  {word:'addition', phonetic:'/dn/', meaning:'增加；加法', pos:'n/a'},
+  {word:'adequate', phonetic:'/�dkwt/', meaning:'足够的，充分的', pos:'a'},
+  {word:'adjust', phonetic:'/dst/', meaning:'调整，调节', pos:'v'},
+  {word:'administer', phonetic:'/dmnst(r)/', meaning:'管理，执行', pos:'v'},
+  {word:'adoption', phonetic:'/dpn/', meaning:'采用；收养', pos:'n'},
+  {word:'advance', phonetic:'/dv:ns/', meaning:'前进；进步；预先的', pos:'n'},
+  {word:'advanced', phonetic:'/dv:nst/', meaning:'高级的，先进的', pos:'a'},
+  {word:'advocate', phonetic:'/�dvket/', meaning:'提倡，主张；倡导者', pos:'v'},
+  {word:'affair', phonetic:'/fe(r)/', meaning:'事情，事务', pos:'n'},
+  {word:'aggressive', phonetic:'/gresv/', meaning:'侵略的；好斗的；积极的', pos:'a'},
+  {word:'agriculture', phonetic:'/�grklt(r)/', meaning:'农业', pos:'n'},
+  {word:'ahead', phonetic:'/hed/', meaning:'在前面；向前', pos:'a'},
+  {word:'alcohol', phonetic:'/�lkhl/', meaning:'酒精，酒', pos:'n'},
+  {word:'alert', phonetic:'/l:t/', meaning:'警觉的；警告；使警觉', pos:'a'},
+  {word:'allege', phonetic:'/led/', meaning:'声称，断言', pos:'v'},
+  {word:'alleged', phonetic:'/\'ledd/', meaning:'据称的，所谓的', pos:'a'},
+  {word:'alley', phonetic:'/�li/', meaning:'小巷，胡同', pos:'n'},
+  {word:'alternative', phonetic:'/:lt:ntv/', meaning:'替代的；替代方案', pos:'a/n'},
+  {word:'altitude', phonetic:'/�lttju:d/', meaning:'海拔，高度', pos:'n'},
+  {word:'altogether', phonetic:'/:ltge�(r)/', meaning:'完全地；总共', pos:'a'},
+  {word:'amateur', phonetic:'/�mt(r)/', meaning:'业余的；业余爱好者', pos:'n/a'},
+  {word:'ambition', phonetic:'/�mbn/', meaning:'雄心，野心', pos:'n'},
+  {word:'ambitious', phonetic:'/�mbs/', meaning:'有雄心的，野心勃勃的', pos:'a'},
+  {word:'among', phonetic:'/m/', meaning:'在...之中', pos:'prep'},
+  {word:'ample', phonetic:'/�mpl/', meaning:'充足的，丰富的', pos:'a'},
+  {word:'amuse', phonetic:'/mju:z/', meaning:'逗乐，娱乐', pos:'v'},
+  {word:'ancestor', phonetic:'/�nsest(r)/', meaning:'祖先', pos:'n'},
+  {word:'anchor', phonetic:'/�k(r)/', meaning:'锚；主持人；固定', pos:'n/v'},
+  {word:'annoy', phonetic:'/n/', meaning:'惹恼，使烦恼', pos:'v'},
+  {word:'annual', phonetic:'/�njul/', meaning:'每年的；年刊', pos:'a/n'},
+  {word:'anticipate', phonetic:'/�ntspet/', meaning:'预期，预料', pos:'v'},
+  {word:'antique', phonetic:'/�nti:k/', meaning:'古董；古老的', pos:'n/a'},
+  {word:'anxious', phonetic:'/�ks/', meaning:'焦虑的，担忧的', pos:'a'},
+  {word:'anyhow', phonetic:'/eniha/', meaning:'无论如何', pos:'a'},
+  {word:'anyone', phonetic:'/eniwn/', meaning:'任何人', pos:'pron/a/n'},
+  {word:'anywhere', phonetic:'/eniwe(r)/', meaning:'任何地方', pos:'a'},
+  {word:'appeal', phonetic:'/pi:l/', meaning:'呼吁；吸引；上诉', pos:'v'},
+  {word:'appear', phonetic:'/p(r)/', meaning:'出现；似乎', pos:'v/a'},
+  {word:'appetite', phonetic:'/�ptat/', meaning:'食欲；胃口', pos:'n'},
+  {word:'applicable', phonetic:'/plkbl/', meaning:'适用的，合适的', pos:'a/a'},
+  {word:'approach', phonetic:'/prt/', meaning:'接近；方法；途径', pos:'v/n'},
+  {word:'approval', phonetic:'/pru:vl/', meaning:'批准，赞同', pos:'n'},
+  {word:'approximate', phonetic:'/prksmt/', meaning:'大约的，近似的', pos:'a'},
+  {word:'aptitude', phonetic:'/�pttju:d/', meaning:'才能，天资', pos:'n'},
+  {word:'arbitrary', phonetic:'/:btrri/', meaning:'任意的；专制的', pos:'a'},
+  {word:'area', phonetic:'/eri/', meaning:'区域；领域；面积', pos:'n'},
+  {word:'arise', phonetic:'/raz/', meaning:'出现，产生；起身', pos:'v'},
+  {word:'arouse', phonetic:'/raz/', meaning:'唤醒，激起', pos:'v'},
+  {word:'arrange', phonetic:'/rend/', meaning:'安排，整理', pos:'v'},
+  {word:'arrest', phonetic:'/rest/', meaning:'逮捕；阻止', pos:'v'},
+  {word:'arrival', phonetic:'/ravl/', meaning:'到达；到达者', pos:'n'},
+  {word:'arrow', phonetic:'/�r/', meaning:'箭；箭头', pos:'n'},
+  {word:'artificial', phonetic:'/:tfl/', meaning:'人造的，人工的', pos:'a'},
+  {word:'ash', phonetic:'/�/', meaning:'灰烬', pos:'n'},
+  {word:'ashamed', phonetic:'/emd/', meaning:'羞愧的', pos:'a'},
+  {word:'aside', phonetic:'/sad/', meaning:'在旁边；到一边', pos:'a'},
+  {word:'assemble', phonetic:'/sembl/', meaning:'集合；组装', pos:'v/v'},
+  {word:'assess', phonetic:'/ses/', meaning:'评估，评定', pos:'v'},
+  {word:'asset', phonetic:'/�set/', meaning:'资产；优点', pos:'n'},
+  {word:'assistance', phonetic:'/sstns/', meaning:'帮助，援助', pos:'n'},
+  {word:'assume', phonetic:'/sju:m/', meaning:'假设；承担', pos:'v'},
+  {word:'assure', phonetic:'/(r)/', meaning:'保证，使确信', pos:'v'},
+  {word:'attain', phonetic:'/ten/', meaning:'达到，获得', pos:'v'},
+  {word:'attic', phonetic:'/�tk/', meaning:'阁楼', pos:'n'},
+  {word:'attorney', phonetic:'/t:ni/', meaning:'律师', pos:'n'},
+  {word:'attribute', phonetic:'/trbju:t/', meaning:'属性；归因于', pos:'v'},
+  {word:'authentic', phonetic:'/:entk/', meaning:'真实的；可靠的', pos:'a'},
+  {word:'authority', phonetic:'/:rti/', meaning:'权威；当局', pos:'n'},
+  {word:'automatic', phonetic:'/:tm�tk/', meaning:'自动的', pos:'a/a'},
+  {word:'auxiliary', phonetic:'/:gzliri/', meaning:'辅助的；助动词', pos:'a'},
+  {word:'available', phonetic:'/velbl/', meaning:'可用的，可得到的', pos:'a'},
+  {word:'avenue', phonetic:'/�vinju:/', meaning:'大街；途径', pos:'n'},
+  {word:'award', phonetic:'/w:d/', meaning:'奖励；授予', pos:'n'},
+  {word:'aware', phonetic:'/we(r)/', meaning:'意识到的', pos:'a'},
+  {word:'awesome', phonetic:'/:sm/', meaning:'令人敬畏的；极好的', pos:'a'},
+  {word:'awkward', phonetic:'/:kwd/', meaning:'尴尬的；笨拙的', pos:'a'},
+  {word:'bacteria', phonetic:'/b�ktri/', meaning:'细菌', pos:'n'},
+  {word:'badge', phonetic:'/b�d/', meaning:'徽章，标记', pos:'n'},
+  {word:'baggage', phonetic:'/b�gd/', meaning:'行李', pos:'n'},
+  {word:'balance', phonetic:'/b�lns/', meaning:'平衡；余额', pos:'n/v'},
+  {word:'ballot', phonetic:'/b�lt/', meaning:'投票；选票', pos:'n/v'},
+  {word:'ban', phonetic:'/b�n/', meaning:'禁止；禁令', pos:'v/n'},
+  {word:'bandage', phonetic:'/b�ndd/', meaning:'绷带', pos:'n/v'},
+  {word:'bang', phonetic:'/b�/', meaning:'猛击；砰的一声', pos:'n/v'},
+  {word:'banknote', phonetic:'/b�knt/', meaning:'钞票', pos:'n'},
+  {word:'bankrupt', phonetic:'/b�krpt/', meaning:'破产的；使破产', pos:'a/n/v'},
+  {word:'banquet', phonetic:'/b�kwt/', meaning:'宴会', pos:'n'},
+  {word:'barrier', phonetic:'/b�ri(r)/', meaning:'障碍，屏障', pos:'n'},
+  {word:'basically', phonetic:'/beskli/', meaning:'基本上', pos:'a'},
+  {word:'basin', phonetic:'/besn/', meaning:'盆；流域', pos:'n'},
+  {word:'beard', phonetic:'/bd/', meaning:'胡须', pos:'n'},
+  {word:'belly', phonetic:'/beli/', meaning:'腹部', pos:'n/v'},
+  {word:'below', phonetic:'/bl/', meaning:'在...下面', pos:'prep'},
+  {word:'bench', phonetic:'/bent/', meaning:'长凳', pos:'n'},
+  {word:'bend', phonetic:'/bend/', meaning:'弯曲；使弯曲', pos:'v'},
+  {word:'betray', phonetic:'/btre/', meaning:'背叛；泄露', pos:'v'},
+  {word:'beverage', phonetic:'/bevrd/', meaning:'饮料', pos:'n'},
+  {word:'bias', phonetic:'/bas/', meaning:'偏见；使有偏见', pos:'n/v'},
+  {word:'bible', phonetic:'/babl/', meaning:'圣经', pos:'n'},
+  {word:'bid', phonetic:'/bd/', meaning:'出价；投标', pos:'v/n'},
+  {word:'bite', phonetic:'/bat/', meaning:'咬；咬伤', pos:'v'},
+  {word:'bitter', phonetic:'/bt(r)/', meaning:'苦的；痛苦的', pos:'a'},
+  {word:'blame', phonetic:'/blem/', meaning:'责备；责任', pos:'v'},
+  {word:'blank', phonetic:'/bl�k/', meaning:'空白的；空白处', pos:'a/n'},
+  {word:'blanket', phonetic:'/bl�kt/', meaning:'毯子；覆盖', pos:'n/a'},
+  {word:'blast', phonetic:'/bl:st/', meaning:'爆炸；一阵；炸毁', pos:'n/v'},
+  {word:'blend', phonetic:'/blend/', meaning:'混合；混合物', pos:'v/n'},
+  {word:'blind', phonetic:'/bland/', meaning:'盲的；使失明', pos:'a'},
+  {word:'block', phonetic:'/blk/', meaning:'街区；块；阻碍', pos:'n/v'},
+  {word:'blur', phonetic:'/bl:(r)/', meaning:'模糊；使模糊', pos:'v/n'},
+  {word:'board', phonetic:'/[h:d/', meaning:'板；董事会；登机', pos:'n/v'},
+  {word:'boast', phonetic:'/bst/', meaning:'夸耀，自夸', pos:'v/n'},
+  {word:'boil', phonetic:'/bl/', meaning:'煮沸；沸腾', pos:'v'},
+  {word:'bold', phonetic:'/bld/', meaning:'大胆的；粗体的', pos:'a'},
+  {word:'bone', phonetic:'/bn/', meaning:'骨头', pos:'n'},
+  {word:'bonus', phonetic:'/bns/', meaning:'奖金；额外的好处', pos:'n'},
+  {word:'boom', phonetic:'/bu: m/', meaning:'繁荣；迅速发展', pos:'n/v'},
+  {word:'bother', phonetic:'/b�(r)/', meaning:'打扰；烦恼', pos:'v/n'},
+  {word:'boundary', phonetic:'/bandri/', meaning:'边界，分界线', pos:'n'},
+  {word:'brag', phonetic:'/br�g/', meaning:'吹嘘，自夸', pos:'v'},
+  {word:'branch', phonetic:'/br:nt/', meaning:'分支；树枝；分公司', pos:'n/v'},
+  {word:'brandy', phonetic:'/br�ndi/', meaning:'白兰地酒', pos:'n'},
+  {word:'breadth', phonetic:'/bred/', meaning:'宽度，广度', pos:'n'},
+  {word:'breed', phonetic:'/bri:d/', meaning:'品种；繁殖；养育', pos:'n/v'},
+  {word:'brief', phonetic:'/bri:f/', meaning:'简短的；简要说明', pos:'a'},
+  {word:'bright', phonetic:'/brat/', meaning:'明亮的；聪明的', pos:'a'},
+  {word:'brilliant', phonetic:'/brlint/', meaning:'杰出的；明亮的', pos:'a'},
+  {word:'broad', phonetic:'/br:d/', meaning:'宽的，广阔的', pos:'a'},
+  {word:'broadcast', phonetic:'/br:dk:st/', meaning:'广播；播送', pos:'n/v'},
+  {word:'broaden', phonetic:'/br:dn/', meaning:'拓宽，扩大', pos:'v'},
+  {word:'brochure', phonetic:'/br(r)/', meaning:'小册子', pos:'n'},
+  {word:'brush', phonetic:'/br/', meaning:'刷子；刷', pos:'n/v'},
+  {word:'bubble', phonetic:'/bbl/', meaning:'气泡；冒泡', pos:'n/v'},
+  {word:'buddy', phonetic:'/bdi/', meaning:'伙伴，朋友', pos:'n'},
+  {word:'budget', phonetic:'/bdt/', meaning:'预算', pos:'n/v'},
+  {word:'bullet', phonetic:'/blt/', meaning:'子弹', pos:'n'},
+  {word:'bulletin', phonetic:'/bltn/', meaning:'公告，公报', pos:'n'},
+  {word:'bully', phonetic:'/bli/', meaning:'欺负；恶霸', pos:'n/v'},
+  {word:'bunch', phonetic:'/bnt/', meaning:'束，串；一群', pos:'n/v'},
+  {word:'bundle', phonetic:'/bndl/', meaning:'捆，包，束', pos:'n'},
+  {word:'burst', phonetic:'/b:st/', meaning:'爆发；爆炸', pos:'v/v'},
+  {word:'bury', phonetic:'/beri/', meaning:'埋葬', pos:'v'},
+  {word:'bush', phonetic:'/b/', meaning:'灌木丛', pos:'n'},
+  {word:'button', phonetic:'/btn/', meaning:'按钮；纽扣', pos:'n/v'},
+  {word:'cabinet', phonetic:'/k�bnt/', meaning:'橱柜；内阁', pos:'n'},
+  {word:'cable', phonetic:'/kebl/', meaning:'电缆；电报', pos:'n'},
+  {word:'cage', phonetic:'/ked/', meaning:'笼子', pos:'n'},
+  {word:'calculating', phonetic:'/k�lkjulet/', meaning:'精明的；计算的', pos:'a'},
+  {word:'calendar', phonetic:'/k�lnd(r)/', meaning:'日历', pos:'n'},
+  {word:'camp', phonetic:'/k�mp/', meaning:'营地；露营', pos:'n/v'},
+  {word:'campaign', phonetic:'/k�mpen/', meaning:'运动；战役', pos:'n'},
+  {word:'campus', phonetic:'/k�mps/', meaning:'校园', pos:'n'},
+  {word:'candidate', phonetic:'/k�nddt/', meaning:'候选人；应试者', pos:'n'},
+  {word:'capable', phonetic:'/kepbl/', meaning:'有能力的', pos:'a'},
+  {word:'capacity', phonetic:'/kp�sti/', meaning:'能力；容量', pos:'n'},
+  {word:'capital', phonetic:'/k�ptl/', meaning:'首都；资本；大写的', pos:'n'},
+  {word:'cast', phonetic:'/k:st/', meaning:'投掷；投射；演员阵容', pos:'v'},
+  {word:'castle', phonetic:'/k:sl/', meaning:'城堡', pos:'n'},
+  {word:'casual', phonetic:'/k�ul/', meaning:'随意的；偶然的', pos:'a'},
+  {word:'category', phonetic:'/k�tgri/', meaning:'类别，种类', pos:'n'},
+  {word:'cater', phonetic:'/ket(r)/', meaning:'满足需求；提供饮食', pos:'v'},
+  {word:'cave', phonetic:'/kev/', meaning:'洞穴', pos:'n'},
+  {word:'ccommodation', phonetic:'/kmden/', meaning:'住宿；适应', pos:'n'},
+  {word:'ccordingly', phonetic:'/k:dli/', meaning:'因此，相应地', pos:'a'},
+  {word:'ccountable', phonetic:'/kantbl/', meaning:'有责任的', pos:'a'},
+  {word:'cease', phonetic:'/si:s/', meaning:'停止，终止', pos:'v'},
+  {word:'ceiling', phonetic:'/si:l/', meaning:'天花板', pos:'n'},
+  {word:'cell', phonetic:'/sel/', meaning:'细胞；单元格；小牢房', pos:'n'},
+  {word:'cent', phonetic:'/sent/', meaning:'分（货币单位）', pos:'n'},
+  {word:'century', phonetic:'/sentri/', meaning:'世纪，百年', pos:'n'},
+  {word:'ceremony', phonetic:'/sermni/', meaning:'典礼，仪式', pos:'n'},
+  {word:'chain', phonetic:'/ten/', meaning:'链条；一系列；连锁', pos:'n/v'},
+  {word:'chalk', phonetic:'/t:k/', meaning:'粉笔', pos:'n'},
+  {word:'champagne', phonetic:'/�mpen/', meaning:'香槟酒', pos:'n'},
+  {word:'chaos', phonetic:'/kes/', meaning:'混乱', pos:'n'},
+  {word:'characteristic', phonetic:'/k�rktrstk/', meaning:'特征；典型的', pos:'n/a'},
+  {word:'charge', phonetic:'/t:d/', meaning:'费用；指控；充电', pos:'n/v'},
+  {word:'cheese', phonetic:'/ti:z/', meaning:'奶酪', pos:'n'},
+  {word:'cheque', phonetic:'/tek/', meaning:'支票', pos:'n'},
+  {word:'chew', phonetic:'/tu:/', meaning:'咀嚼', pos:'v'},
+  {word:'chief', phonetic:'/ti:f/', meaning:'主要的；首领', pos:'a'},
+  {word:'chill', phonetic:'/tl/', meaning:'寒冷；使变冷', pos:'v'},
+  {word:'chimney', phonetic:'/tmni/', meaning:'烟囱', pos:'n'},
+  {word:'choke', phonetic:'/tk/', meaning:'窒息；阻塞', pos:'v'},
+  {word:'chop', phonetic:'/tp/', meaning:'砍，剁', pos:'v'},
+  {word:'christ', phonetic:'/krast/', meaning:'基督', pos:'n'},
+  {word:'christian', phonetic:'/krstn/', meaning:'基督徒；基督教的', pos:'n/a'},
+  {word:'church', phonetic:'/t:t/', meaning:'教堂；教会', pos:'n'},
+  {word:'circuit', phonetic:'/s:kt/', meaning:'电路；巡回', pos:'n'},
+  {word:'circular', phonetic:'/s:kla(r)/', meaning:'圆形的；循环的', pos:'a'},
+  {word:'circulate', phonetic:'/s:kjlet/', meaning:'循环；流通', pos:'v'},
+  {word:'circumstance', phonetic:'/s:kmstns/', meaning:'环境，情况', pos:'n'},
+  {word:'cite', phonetic:'/sat/', meaning:'引用；引证', pos:'v'},
+  {word:'citizen', phonetic:'/stzn/', meaning:'公民，市民', pos:'n'},
+  {word:'civil', phonetic:'/svl/', meaning:'公民的；民事的；文明的', pos:'a'},
+  {word:'civilization', phonetic:'/svlazen/', meaning:'文明', pos:'n'},
+  {word:'claim', phonetic:'/klem/', meaning:'声称；要求；索赔', pos:'v'},
+  {word:'clarify', phonetic:'/kl�rfa/', meaning:'澄清，阐明', pos:'v'},
+  {word:'clash', phonetic:'/kl�/', meaning:'冲突；碰撞', pos:'v/n'},
+  {word:'classification', phonetic:'/kl�sfken/', meaning:'分类，分级', pos:'n'},
+  {word:'classify', phonetic:'/kl�sfa/', meaning:'分类', pos:'v'},
+  {word:'claw', phonetic:'/kl:/', meaning:'爪子', pos:'n'},
+  {word:'clay', phonetic:'/kle/', meaning:'黏土', pos:'n'},
+  {word:'click', phonetic:'/klk/', meaning:'点击；咔嗒声', pos:'v'},
+  {word:'clue', phonetic:'/klu:/', meaning:'线索，提示', pos:'n'},
+  {word:'coal', phonetic:'/kl/', meaning:'煤', pos:'n'},
+  {word:'coarse', phonetic:'/k:s/', meaning:'粗糙的；粗鲁的', pos:'a'},
+  {word:'coast', phonetic:'/kst/', meaning:'海岸', pos:'n'},
+  {word:'cock', phonetic:'/kk/', meaning:'公鸡', pos:'n'},
+  {word:'code', phonetic:'/kd/', meaning:'代码；密码；编码', pos:'n/v'},
+  {word:'coherence', phonetic:'/khrns/', meaning:'连贯性，一致性', pos:'n'},
+  {word:'coherent', phonetic:'/khrnt/', meaning:'连贯的，一致的', pos:'a'},
+  {word:'cohesion', phonetic:'/khi:n/', meaning:'凝聚力，团结', pos:'n'},
+  {word:'coincidence', phonetic:'/knsdns/', meaning:'巧合', pos:'n'},
+  {word:'collaborate', phonetic:'/kl�bret/', meaning:'合作，协作', pos:'v'},
+  {word:'collaboration', phonetic:'/kl�bren/', meaning:'合作，协作', pos:'n'},
+  {word:'collapse', phonetic:'/kl�ps/', meaning:'倒塌；崩溃', pos:'v'},
+  {word:'collar', phonetic:'/kl(r)/', meaning:'衣领', pos:'n/v'},
+  {word:'colleague', phonetic:'/kli:g/', meaning:'同事', pos:'n'},
+  {word:'collision', phonetic:'/kln/', meaning:'碰撞；冲突', pos:'n'},
+  {word:'colony', phonetic:'/klni/', meaning:'殖民地', pos:'n'},
+  {word:'column', phonetic:'/klm/', meaning:'柱；专栏；列', pos:'n'},
+  {word:'combat', phonetic:'/kmb�t/', meaning:'战斗；对抗', pos:'n/v'},
+  {word:'combination', phonetic:'/kmbnen/', meaning:'结合，组合', pos:'n'},
+  {word:'command', phonetic:'/km:nd/', meaning:'命令；指挥；掌握', pos:'v'},
+  {word:'commander', phonetic:'/km:nd(r)/', meaning:'指挥官', pos:'n'},
+  {word:'commence', phonetic:'/kmens/', meaning:'开始', pos:'v'},
+  {word:'commerce', phonetic:'/km:s/', meaning:'商业，贸易', pos:'n'},
+  {word:'commercial', phonetic:'/km:l/', meaning:'商业的；广告', pos:'a/n'},
+  {word:'commission', phonetic:'/kmn/', meaning:'委员会；佣金；委托', pos:'n'},
+  {word:'commit', phonetic:'/kmt/', meaning:'犯（罪）；承诺；投入', pos:'v'},
+  {word:'committee', phonetic:'/kmti/', meaning:'委员会', pos:'n'},
+  {word:'commodity', phonetic:'/kmdti/', meaning:'商品', pos:'n'},
+  {word:'commune', phonetic:'/kmju:n/', meaning:'公社；交流', pos:'n'},
+  {word:'communism', phonetic:'/kmjunzm/', meaning:'共产主义', pos:'n'},
+  {word:'communist', phonetic:'/kmjnst/', meaning:'共产主义者', pos:'n/a'},
+  {word:'community', phonetic:'/kmju:nti/', meaning:'社区；团体', pos:'n'},
+  {word:'compact', phonetic:'/km\'p�kt/', meaning:'紧凑的；契约', pos:'a'},
+  {word:'comparative', phonetic:'/kmp�rtv/', meaning:'比较的；相对的', pos:'a'},
+  {word:'compatible', phonetic:'/kmp�tbl/', meaning:'兼容的；合得来的', pos:'a'},
+  {word:'compel', phonetic:'/kmpel/', meaning:'强迫，迫使', pos:'v'},
+  {word:'complex', phonetic:'/kmpleks/', meaning:'复杂的；综合体', pos:'a'},
+  {word:'comply', phonetic:'/kmpla/', meaning:'遵守，服从', pos:'v'},
+  {word:'component', phonetic:'/kmpnnt/', meaning:'组成部分，零件', pos:'n'},
+  {word:'compose', phonetic:'/kmpz/', meaning:'组成；创作（音乐等）', pos:'v'},
+  {word:'composition', phonetic:'/kmpzn/', meaning:'组成；作品；作文', pos:'n'},
+  {word:'compound', phonetic:'/kmpand/', meaning:'化合物；复合的；加剧', pos:'n/a/v'},
+  {word:'comprehend', phonetic:'/kmprhend/', meaning:'理解，领悟', pos:'v'},
+  {word:'comprehension', phonetic:'/kmprhenn/', meaning:'理解力', pos:'n'},
+  {word:'comprehensive', phonetic:'/kmprhensv/', meaning:'全面的，综合的', pos:'a'},
+  {word:'compress', phonetic:'/kmpres/', meaning:'压缩', pos:'v/v'},
+  {word:'comprise', phonetic:'/kmpraz/', meaning:'包含，由...组成', pos:'v'},
+  {word:'compromise', phonetic:'/kmprmaz/', meaning:'妥协，折中', pos:'n/v'},
+  {word:'compulsory', phonetic:'/kmplsri/', meaning:'强制性的，义务的', pos:'a'},
+  {word:'conceal', phonetic:'/knsi:l/', meaning:'隐藏，隐瞒', pos:'v'},
+  {word:'concept', phonetic:'/knsept/', meaning:'概念，观念', pos:'n'},
+  {word:'concerning', phonetic:'/kns:n/', meaning:'关于', pos:'prep'},
+  {word:'concrete', phonetic:'/kkri:t/', meaning:'具体的；混凝土', pos:'a/n'},
+  {word:'condemn', phonetic:'/kndem/', meaning:'谴责；判刑', pos:'v'},
+  {word:'condense', phonetic:'/kndens/', meaning:'浓缩；凝结', pos:'v'},
+  {word:'conduct', phonetic:'/kndkt/', meaning:'行为；进行；指挥', pos:'v'},
+  {word:'conference', phonetic:'/knfrns/', meaning:'会议', pos:'n'},
+  {word:'confess', phonetic:'/knfes/', meaning:'坦白，承认', pos:'v'},
+  {word:'confine', phonetic:'/knfan/', meaning:'限制；监禁', pos:'v'},
+  {word:'confirm', phonetic:'/knf:m/', meaning:'确认，证实', pos:'v'},
+  {word:'conflict', phonetic:'/knflkt/', meaning:'冲突，矛盾', pos:'n/v'},
+  {word:'confront', phonetic:'/knfrnt/', meaning:'面对；对抗', pos:'v'},
+  {word:'congress', phonetic:'/kgres/', meaning:'国会；代表大会', pos:'n'},
+  {word:'conjunction', phonetic:'/kndkn/', meaning:'连接；连词', pos:'n'},
+  {word:'conquer', phonetic:'/kk(r)/', meaning:'征服，战胜', pos:'v'},
+  {word:'conquest', phonetic:'/kkwest/', meaning:'征服，战胜', pos:'n'},
+  {word:'conscience', phonetic:'/knns/', meaning:'良心', pos:'n'},
+  {word:'conscientious', phonetic:'/kniens/', meaning:'认真的，尽责的', pos:'a'},
+  {word:'conscious', phonetic:'/kns/', meaning:'有意识的；清醒的', pos:'a'},
+  {word:'consciousness', phonetic:'/knsns/', meaning:'意识；知觉', pos:'n'},
+  {word:'consent', phonetic:'/knsent/', meaning:'同意，允许', pos:'n/v'},
+  {word:'consequence', phonetic:'/knskwns/', meaning:'后果，结果', pos:'n'},
+  {word:'consequently', phonetic:'/knskwntly/', meaning:'因此，所以', pos:'a'},
+  {word:'conservative', phonetic:'/kns:vtv/', meaning:'保守的；保守派', pos:'a/n'},
+  {word:'conserve', phonetic:'/kns:v/', meaning:'保存；节约', pos:'v'},
+  {word:'considerable', phonetic:'/knsdrbl/', meaning:'相当大的', pos:'a'},
+  {word:'considerate', phonetic:'/knsdrt/', meaning:'体贴的，考虑周到的', pos:'a'},
+  {word:'consist', phonetic:'/knsst/', meaning:'由...组成；在于', pos:'v'},
+  {word:'consistent', phonetic:'/knsstnt/', meaning:'一致的，始终如一的', pos:'a'},
+  {word:'consolidate', phonetic:'/knsldet/', meaning:'巩固，加强', pos:'v'},
+  {word:'constant', phonetic:'/knstnt/', meaning:'持续的；常数', pos:'a'},
+  {word:'constitute', phonetic:'/knsttju:t/', meaning:'构成，组成', pos:'v'},
+  {word:'constitution', phonetic:'/knsttju:n/', meaning:'宪法；构成', pos:'n'},
+  {word:'construct', phonetic:'/knstrkt/', meaning:'建造，构建', pos:'v'},
+  {word:'consult', phonetic:'/knslt/', meaning:'咨询；查阅', pos:'v/v'},
+  {word:'consultant', phonetic:'/knsltnt/', meaning:'顾问', pos:'n'},
+  {word:'consumption', phonetic:'/knsmpn/', meaning:'消费，消耗', pos:'n'},
+  {word:'contact', phonetic:'/knt�kt/', meaning:'接触；联系', pos:'n/v'},
+  {word:'contain', phonetic:'/knten/', meaning:'包含；控制', pos:'v'},
+  {word:'contaminate', phonetic:'/knt�mnet/', meaning:'污染，弄脏', pos:'v'},
+  {word:'contemporary', phonetic:'/kntemprri/', meaning:'当代的；同时代的', pos:'a'},
+  {word:'contend', phonetic:'/kntend/', meaning:'竞争；主张', pos:'v'},
+  {word:'content', phonetic:'/\'kntent/', meaning:'内容；满足的', pos:'n'},
+  {word:'contest', phonetic:'/kntest/', meaning:'比赛，竞赛', pos:'n'},
+  {word:'context', phonetic:'/kntekst/', meaning:'背景，语境', pos:'n'},
+  {word:'continent', phonetic:'/kntnnt/', meaning:'大陆，洲', pos:'n'},
+  {word:'continuous', phonetic:'/kntnjus/', meaning:'连续的，不断的', pos:'a'},
+  {word:'contract', phonetic:'/\'kontraekt/', meaning:'合同；收缩', pos:'n'},
+  {word:'contradict', phonetic:'/kntrdkt/', meaning:'矛盾；反驳', pos:'v'},
+  {word:'contrary', phonetic:'/kntrri/', meaning:'相反的；相反', pos:'a/n'},
+  {word:'contrast', phonetic:'/\'kontra:st/', meaning:'对比，对照', pos:'n'},
+  {word:'controversy', phonetic:'/kntrv:si/', meaning:'争论，争议', pos:'n'},
+  {word:'convention', phonetic:'/knvenn/', meaning:'惯例；大会；公约', pos:'n'},
+  {word:'conventional', phonetic:'/knvennl/', meaning:'传统的，常规的', pos:'a'},
+  {word:'conversation', phonetic:'/knvsen/', meaning:'对话，交谈', pos:'n'},
+  {word:'converse', phonetic:'/knv:s/', meaning:'交谈；相反的', pos:'v'},
+  {word:'convert', phonetic:'/knv:t/', meaning:'转换，转变', pos:'v'},
+  {word:'convey', phonetic:'/knve/', meaning:'传达；运送', pos:'v'},
+  {word:'convince', phonetic:'/knvns/', meaning:'说服，使信服', pos:'v'},
+  {word:'cooperation', phonetic:'/kpren/', meaning:'合作', pos:'n'},
+  {word:'coordinate', phonetic:'/k\':dnet/', meaning:'协调；坐标', pos:'v'},
+  {word:'cop', phonetic:'/kp/', meaning:'警察', pos:'n/v'},
+  {word:'cope', phonetic:'/kp/', meaning:'应对，处理', pos:'v'},
+  {word:'copyright', phonetic:'/kpirat/', meaning:'版权', pos:'n'},
+  {word:'corn', phonetic:'/k:n/', meaning:'玉米；谷物', pos:'n'},
+  {word:'corporation', phonetic:'/k:pren/', meaning:'公司，企业', pos:'n'},
+  {word:'correspond', phonetic:'/krspnd/', meaning:'对应；通信', pos:'v'},
+  {word:'corresponding', phonetic:'/krspnd/', meaning:'相应的，对应的', pos:'a'},
+  {word:'corrupt', phonetic:'/krpt/', meaning:'腐败的；使腐败', pos:'a/v'},
+  {word:'costly', phonetic:'/kstli/', meaning:'昂贵的', pos:'a'},
+  {word:'cottage', phonetic:'/ktd/', meaning:'小屋，村舍', pos:'n'},
+  {word:'cotton', phonetic:'/ktn/', meaning:'棉花', pos:'n'},
+  {word:'cough', phonetic:'/kf/', meaning:'咳嗽', pos:'n'},
+  {word:'council', phonetic:'/\'kansl/', meaning:'委员会；理事会', pos:'n'},
+  {word:'counsel', phonetic:'/kansl/', meaning:'劝告；法律顾问', pos:'n/v'},
+  {word:'counter', phonetic:'/kant(r)/', meaning:'柜台；反对；计数器', pos:'n/a/v'},
+  {word:'counterpart', phonetic:'/kantp:t/', meaning:'对应的人或物', pos:'n'},
+  {word:'court', phonetic:'/k:t/', meaning:'法院；球场；庭院', pos:'n'},
+  {word:'cow', phonetic:'/ka/', meaning:'母牛；威胁', pos:'n/v'},
+  {word:'crack', phonetic:'/kr�k/', meaning:'裂缝；破裂；发出爆裂声', pos:'n/v'},
+  {word:'craft', phonetic:'/kr:ft/', meaning:'工艺；手艺；航天器', pos:'n'},
+  {word:'crash', phonetic:'/kr�/', meaning:'碰撞；崩溃；坠毁', pos:'v/n'},
+  {word:'cream', phonetic:'/kri:m/', meaning:'奶油；面霜', pos:'n'},
+  {word:'credit', phonetic:'/kredt/', meaning:'信用；学分；归功于', pos:'n'},
+  {word:'creep', phonetic:'/kri:p/', meaning:'爬行；悄悄地走', pos:'v'},
+  {word:'critical', phonetic:'/krtkl/', meaning:'批评的；关键性的', pos:'a'},
+  {word:'criticism', phonetic:'/krtszm/', meaning:'批评；评论', pos:'n'},
+  {word:'criticize', phonetic:'/krtsaz/', meaning:'批评；评论', pos:'v/v'},
+  {word:'crop', phonetic:'/krp/', meaning:'农作物；收成', pos:'n/v'},
+  {word:'crown', phonetic:'/kran/', meaning:'王冠；顶部', pos:'n'},
+  {word:'crucial', phonetic:'/kru:l/', meaning:'至关重要的', pos:'a'},
+  {word:'crude', phonetic:'/kru:d/', meaning:'粗糙的；天然的；粗鲁的', pos:'a'},
+  {word:'cruel', phonetic:'/kru:l/', meaning:'残酷的', pos:'a'},
+  {word:'cruise', phonetic:'/kru:z/', meaning:'巡航，航行', pos:'v'},
+  {word:'crush', phonetic:'/kr/', meaning:'压碎；迷恋', pos:'v'},
+  {word:'cubic', phonetic:'/kju:bk/', meaning:'立方的', pos:'a'},
+  {word:'cultivate', phonetic:'/kltvet/', meaning:'培养；耕作', pos:'v'},
+  {word:'curb', phonetic:'/k:b/', meaning:'控制；路边', pos:'n'},
+  {word:'currency', phonetic:'/krnsi/', meaning:'货币；流通', pos:'n'},
+  {word:'curriculum', phonetic:'/krkjlm/', meaning:'课程', pos:'n'},
+  {word:'custom', phonetic:'/kstm/', meaning:'习俗；海关', pos:'n'},
+  {word:'customs', phonetic:'/kstmz/', meaning:'海关；关税', pos:'n'},
+  {word:'damp', phonetic:'/d�mp/', meaning:'潮湿的；湿气', pos:'a/n'},
+  {word:'dare', phonetic:'/de(r)/', meaning:'敢于；挑战', pos:'v'},
+  {word:'dash', phonetic:'/d�/', meaning:'猛冲；破折号；少量', pos:'v'},
+  {word:'database', phonetic:'/detbes/', meaning:'数据库', pos:'n'},
+  {word:'dawn', phonetic:'/d:n/', meaning:'黎明；开始', pos:'n'},
+  {word:'dditional', phonetic:'/dnl/', meaning:'附加的', pos:'a'},
+  {word:'debate', phonetic:'/dbet/', meaning:'辩论，争论', pos:'n/v'},
+  {word:'debt', phonetic:'/det/', meaning:'债务', pos:'n'},
+  {word:'decade', phonetic:'/deked/', meaning:'十年', pos:'n'},
+  {word:'decay', phonetic:'/dke/', meaning:'腐烂；衰退', pos:'n/v'},
+  {word:'deceive', phonetic:'/dsi:v/', meaning:'欺骗', pos:'v'},
+  {word:'decent', phonetic:'/di:snt/', meaning:'体面的；正派的', pos:'a'},
+  {word:'deck', phonetic:'/dek/', meaning:'甲板；层面', pos:'n/v'},
+  {word:'declare', phonetic:'/dkle(r)/', meaning:'宣布，声明', pos:'v'},
+  {word:'decline', phonetic:'/dklan/', meaning:'下降；衰退；谢绝', pos:'v/n'},
+  {word:'decorate', phonetic:'/dekret/', meaning:'装饰', pos:'v'},
+  {word:'decoration', phonetic:'/dekren/', meaning:'装饰品', pos:'n'},
+  {word:'deed', phonetic:'/di:d/', meaning:'行为；契约', pos:'n'},
+  {word:'defeat', phonetic:'/dfi:t/', meaning:'击败；失败', pos:'v'},
+  {word:'defect', phonetic:'/di:fekt/', meaning:'缺陷，缺点', pos:'n'},
+  {word:'defense', phonetic:'/d\'fens/', meaning:'防御；辩护', pos:'n'},
+  {word:'deficient', phonetic:'/dfnt/', meaning:'不足的，缺乏的', pos:'a'},
+  {word:'deficit', phonetic:'/defst/', meaning:'赤字，亏损', pos:'n'},
+  {word:'define', phonetic:'/dfan/', meaning:'定义；界定', pos:'v'},
+  {word:'definite', phonetic:'/defnt/', meaning:'确定的，明确的', pos:'a'},
+  {word:'definition', phonetic:'/definin/', meaning:'定义；清晰度', pos:'n'},
+  {word:'defy', phonetic:'/dfa/', meaning:'违抗；挑战', pos:'v'},
+  {word:'delay', phonetic:'/dle/', meaning:'延迟，耽搁', pos:'v/n'},
+  {word:'delete', phonetic:'/dli:t/', meaning:'删除', pos:'v'},
+  {word:'deliberate', phonetic:'/dlbrt/', meaning:'故意的；深思熟虑的', pos:'a/v'},
+  {word:'deliberately', phonetic:'/d\'liberetl/', meaning:'故意地；从容地', pos:'a'},
+  {word:'delicate', phonetic:'/delkt/', meaning:'精致的；微妙的；脆弱的', pos:'a'},
+  {word:'delighted', phonetic:'/dlatd/', meaning:'高兴的，愉快的', pos:'a'},
+  {word:'deliver', phonetic:'/dlv(r)/', meaning:'递送；发表；接生', pos:'v'},
+  {word:'democracy', phonetic:'/dmkrsi/', meaning:'民主', pos:'n'},
+  {word:'democratic', phonetic:'/demkr�tk/', meaning:'民主的', pos:'a'},
+  {word:'demonstrate', phonetic:'/demnstret/', meaning:'展示；证明；示威', pos:'v'},
+  {word:'dense', phonetic:'/dens/', meaning:'密集的；浓厚的', pos:'a'},
+  {word:'density', phonetic:'/densti/', meaning:'密度', pos:'n'},
+  {word:'deny', phonetic:'/dna/', meaning:'否认；拒绝', pos:'v'},
+  {word:'depart', phonetic:'/dp:t/', meaning:'离开，出发', pos:'v'},
+  {word:'department', phonetic:'/dp:tmnt/', meaning:'部门；系', pos:'n'},
+  {word:'departure', phonetic:'/dp:t(r)/', meaning:'离开，出发', pos:'n'},
+  {word:'deposit', phonetic:'/dpzt/', meaning:'存放；存款；押金', pos:'v/n'},
+  {word:'depress', phonetic:'/dpres/', meaning:'使沮丧；按下；使萧条', pos:'v'},
+  {word:'depression', phonetic:'/dpren/', meaning:'沮丧；经济萧条', pos:'n'},
+  {word:'deprive', phonetic:'/dprav/', meaning:'剥夺，使丧失', pos:'v'},
+  {word:'depth', phonetic:'/dep/', meaning:'深度', pos:'n'},
+  {word:'deputy', phonetic:'/depjuti/', meaning:'副手；代理人', pos:'n'},
+  {word:'derive', phonetic:'/diraiv/', meaning:'源于；获得', pos:'v'},
+  {word:'deserve', phonetic:'/dz:v/', meaning:'值得，应得', pos:'v'},
+  {word:'despair', phonetic:'/dspe(r)/', meaning:'绝望', pos:'n/v'},
+  {word:'despite', phonetic:'/dspat/', meaning:'尽管', pos:'prep'},
+  {word:'destroy', phonetic:'/dstr/', meaning:'破坏，毁灭', pos:'v'},
+  {word:'destruction', phonetic:'/dstrkn/', meaning:'破坏，毁灭', pos:'n'},
+  {word:'detail', phonetic:'/di:tel/', meaning:'细节；详细说明', pos:'n'},
+  {word:'detect', phonetic:'/dtekt/', meaning:'发现，察觉', pos:'v'},
+  {word:'detective', phonetic:'/dtektv/', meaning:'侦探；侦探的', pos:'n/a'},
+  {word:'deteriorate', phonetic:'/dtriret/', meaning:'恶化，变坏', pos:'v'},
+  {word:'determine', phonetic:'/dt:mn/', meaning:'决定；确定', pos:'v'},
+  {word:'device', phonetic:'/dvas/', meaning:'设备，装置', pos:'n'},
+  {word:'devil', phonetic:'/\'devl/', meaning:'魔鬼', pos:'n'},
+  {word:'devise', phonetic:'/dvaz/', meaning:'设计，发明', pos:'v'},
+  {word:'devote', phonetic:'/[dvt/', meaning:'致力于，奉献', pos:'v'},
+  {word:'devotion', phonetic:'/dvn/', meaning:'奉献，热爱', pos:'n'},
+  {word:'diagnose', phonetic:'/dagnz/', meaning:'诊断', pos:'v'},
+  {word:'diagnosis', phonetic:'/dagnss/', meaning:'诊断', pos:'n'},
+  {word:'dial', phonetic:'/dal/', meaning:'拨号；刻度盘', pos:'v/n'},
+  {word:'dialect', phonetic:'/dalekt/', meaning:'方言', pos:'n'},
+  {word:'dialogue', phonetic:'/\'dal/', meaning:'对话', pos:'n'},
+  {word:'dictate', phonetic:'/dktet/', meaning:'口述；命令；支配', pos:'v'},
+  {word:'dictation', phonetic:'/dkten/', meaning:'听写', pos:'n'},
+  {word:'diet', phonetic:'/dat/', meaning:'饮食；节食', pos:'n/v'},
+  {word:'digest', phonetic:'/dadest/', meaning:'消化；摘要', pos:'v/v'},
+  {word:'dignity', phonetic:'/dgnti/', meaning:'尊严；高贵', pos:'n'},
+  {word:'dilemma', phonetic:'/dlem/', meaning:'困境，进退两难', pos:'n'},
+  {word:'dimension', phonetic:'/damenn/', meaning:'维度；尺寸；方面', pos:'n'},
+  {word:'diminish', phonetic:'/dmn/', meaning:'减少，缩小', pos:'v'},
+  {word:'dioxide', phonetic:'/daksad/', meaning:'二氧化物', pos:'n'},
+  {word:'diplomatic', phonetic:'/dplm�tk/', meaning:'外交的；圆滑的', pos:'a'},
+  {word:'dirt', phonetic:'/d:t/', meaning:'污垢，泥土', pos:'n'},
+  {word:'discard', phonetic:'/dsk:d/', meaning:'丢弃，抛弃', pos:'v'},
+  {word:'discharge', phonetic:'/dst:d/', meaning:'释放；解雇；排出', pos:'v'},
+  {word:'discipline', phonetic:'/dspln/', meaning:'纪律；学科；训练', pos:'n/v'},
+  {word:'discount', phonetic:'/dskant/', meaning:'折扣', pos:'n'},
+  {word:'discriminate', phonetic:'/dskrmnet/', meaning:'歧视；区分', pos:'v'},
+  {word:'discrimination', phonetic:'/dskrmnen/', meaning:'歧视；辨别', pos:'n'},
+  {word:'disguise', phonetic:'/dsgaz/', meaning:'伪装，掩饰', pos:'v'},
+  {word:'disgust', phonetic:'/dsgst/', meaning:'厌恶，反感', pos:'n/v'},
+  {word:'disintegrate', phonetic:'/dsntgret/', meaning:'解体，分裂', pos:'v'},
+  {word:'dismiss', phonetic:'/dsms/', meaning:'解散；解雇；驳回', pos:'v'},
+  {word:'disobey', phonetic:'/dsbe/', meaning:'不服从', pos:'v'},
+  {word:'dispatch', phonetic:'/dsp�t/', meaning:'派遣；发送', pos:'v/n'},
+  {word:'display', phonetic:'/dsple/', meaning:'展示，显示', pos:'n'},
+  {word:'dispose', phonetic:'/dspz/', meaning:'处理；安排', pos:'v'},
+  {word:'dispute', phonetic:'/dspju:t/', meaning:'争论，争端', pos:'n/v'},
+  {word:'disrupt', phonetic:'/dis\'rpt/', meaning:'扰乱，中断', pos:'v'},
+  {word:'dissolve', phonetic:'/dzlv/', meaning:'溶解；解散', pos:'v'},
+  {word:'distinct', phonetic:'/dstkt/', meaning:'明显的；不同的', pos:'a'},
+  {word:'distinction', phonetic:'/dstkn/', meaning:'区别；卓越', pos:'n'},
+  {word:'distinguished', phonetic:'/dstgwt/', meaning:'卓越的，杰出的', pos:'a'},
+  {word:'distress', phonetic:'/dstres/', meaning:'痛苦；困境', pos:'n/v'},
+  {word:'distribute', phonetic:'/dstrbju:t/', meaning:'分配，分布', pos:'v'},
+  {word:'district', phonetic:'/dstrkt/', meaning:'区域，地区', pos:'n'},
+  {word:'disturb', phonetic:'/dst:b/', meaning:'打扰，扰乱', pos:'v'},
+  {word:'diverse', phonetic:'/dav:s/', meaning:'多样的，不同的', pos:'a'},
+  {word:'dizzy', phonetic:'/dzi/', meaning:'头晕的', pos:'a'},
+  {word:'domestic', phonetic:'/dmestk/', meaning:'国内的；家庭的', pos:'a'},
+  {word:'dominant', phonetic:'/dmnnt/', meaning:'主导的，支配的', pos:'a'},
+  {word:'dominate', phonetic:'/dmnet/', meaning:'主导，支配', pos:'v'},
+  {word:'donkey', phonetic:'/dki/', meaning:'驴', pos:'n'},
+  {word:'dove', phonetic:'/dv/', meaning:'鸽子；鸽派', pos:'n'},
+  {word:'downstairs', phonetic:'/danstez/', meaning:'楼下的；在楼下', pos:'a'},
+  {word:'dozen', phonetic:'/dzn/', meaning:'一打，十二个', pos:'n'},
+  {word:'draft', phonetic:'/dr:ft/', meaning:'草稿；草案；起草', pos:'n/v'},
+  {word:'drag', phonetic:'/dr�g/', meaning:'拖，拉', pos:'v'},
+  {word:'drain', phonetic:'/dren/', meaning:'排水；消耗；下水道', pos:'v/n'},
+  {word:'drainage', phonetic:'/drend/', meaning:'排水系统', pos:'n'},
+  {word:'dramatic', phonetic:'/drm�tk/', meaning:'戏剧性的；巨大的', pos:'a'},
+  {word:'drawback', phonetic:'/dr:b�k/', meaning:'缺点，不利条件', pos:'n'},
+  {word:'drawer', phonetic:'/dr:(r)/', meaning:'抽屉', pos:'n'},
+  {word:'drought', phonetic:'/drat/', meaning:'干旱', pos:'n'},
+  {word:'drown', phonetic:'/dran/', meaning:'淹死，淹没', pos:'v'},
+  {word:'dull', phonetic:'/dl/', meaning:'枯燥的；迟钝的；暗淡的', pos:'a'},
+  {word:'dump', phonetic:'/dmp/', meaning:'倾倒；垃圾场', pos:'n/v'},
+  {word:'durable', phonetic:'/djrbl/', meaning:'耐用的，持久的', pos:'a'},
+  {word:'dusk', phonetic:'/dsk/', meaning:'黄昏', pos:'n'},
+  {word:'dust', phonetic:'/dst/', meaning:'灰尘', pos:'n'},
+  {word:'dynamic', phonetic:'/dan�mk/', meaning:'动态的；有活力的', pos:'a/n'},
+  {word:'earnest', phonetic:'/:nst/', meaning:'认真的；诚挚的', pos:'a'},
+  {word:'ease', phonetic:'/i:z/', meaning:'容易；舒适；缓解', pos:'n/v'},
+  {word:'echo', phonetic:'/ek/', meaning:'回声；重复', pos:'n/v'},
+  {word:'edge', phonetic:'/ed/', meaning:'边缘；优势', pos:'n'},
+  {word:'edit', phonetic:'/edt/', meaning:'编辑', pos:'v'},
+  {word:'edition', phonetic:'/dn/', meaning:'版本；版次', pos:'n'},
+  {word:'editor', phonetic:'/edt(r)/', meaning:'编辑者', pos:'n'},
+  {word:'effective', phonetic:'/fektv/', meaning:'有效的', pos:'a'},
+  {word:'efficient', phonetic:'/fnt/', meaning:'效率高的', pos:'a'},
+  {word:'elaborate', phonetic:'/l�brt/', meaning:'详细的；精心制作的；详细阐述', pos:'a/v'},
+  {word:'elastic', phonetic:'/l�stk/', meaning:'弹性的；松紧带', pos:'a/n'},
+  {word:'elbow', phonetic:'/elb/', meaning:'肘部', pos:'n/v'},
+  {word:'elect', phonetic:'/lekt/', meaning:'选举；选择', pos:'v'},
+  {word:'elegant', phonetic:'/elgnt/', meaning:'优雅的', pos:'a'},
+  {word:'element', phonetic:'/elmnt/', meaning:'元素；要素', pos:'n'},
+  {word:'elementary', phonetic:'/elmentri/', meaning:'基本的；初级的', pos:'a'},
+  {word:'eliminate', phonetic:'/lmnet/', meaning:'消除，消灭', pos:'v'},
+  {word:'elite', phonetic:'/eli:t/', meaning:'精英', pos:'n'},
+  {word:'elligence', phonetic:'/nteldns/', meaning:'智力；情报', pos:'n'},
+  {word:'embrace', phonetic:'/mbres/', meaning:'拥抱；包含；欣然接受', pos:'v'},
+  {word:'emerge', phonetic:'/im:d/', meaning:'出现，浮现', pos:'v'},
+  {word:'emergence', phonetic:'/\'m:dns/', meaning:'出现，浮现', pos:'n'},
+  {word:'emergency', phonetic:'/im:dnsi/', meaning:'紧急情况', pos:'n/a'},
+  {word:'emission', phonetic:'/imn/', meaning:'排放物；发出', pos:'n'},
+  {word:'emit', phonetic:'/imt/', meaning:'发出，排放', pos:'v'},
+  {word:'emperor', phonetic:'/empr(r)/', meaning:'皇帝', pos:'n'},
+  {word:'emphasize', phonetic:'/emfsaz/', meaning:'强调', pos:'v'},
+  {word:'enclose', phonetic:'/nklz/', meaning:'围住；附上', pos:'v'},
+  {word:'encounter', phonetic:'/nkant(r)/', meaning:'遭遇；偶遇', pos:'v'},
+  {word:'endure', phonetic:'/ndj(r)/', meaning:'忍受；持久', pos:'v'},
+  {word:'enemy', phonetic:'/enmi/', meaning:'敌人', pos:'n'},
+  {word:'energy', phonetic:'/endi/', meaning:'能量；精力', pos:'n'},
+  {word:'enforce', phonetic:'/nf:s/', meaning:'执行；强制实施', pos:'v'},
+  {word:'engage', phonetic:'/nged/', meaning:'参与；吸引；订婚', pos:'v'},
+  {word:'enhance', phonetic:'/nh:ns/', meaning:'增强，提高', pos:'v'},
+  {word:'enlighten', phonetic:'/nlatn/', meaning:'启发，启迪', pos:'v'},
+  {word:'enormous', phonetic:'/nms/', meaning:'巨大的', pos:'a'},
+  {word:'ensure', phonetic:'/n\'(r)/', meaning:'确保，保证', pos:'v'},
+  {word:'enterprise', phonetic:'/entpraz/', meaning:'企业；事业；进取心', pos:'n'},
+  {word:'entertain', phonetic:'/entten/', meaning:'娱乐；招待', pos:'v'},
+  {word:'enthusiasm', phonetic:'/nju:zi�zm/', meaning:'热情，热心', pos:'n'},
+  {word:'enthusiastic', phonetic:'/nju:zi�stk/', meaning:'热情的，热心的', pos:'a'},
+  {word:'entitle', phonetic:'/ntatl/', meaning:'给...权利；给...命名', pos:'v'},
+  {word:'entrepreneur', phonetic:'/ntrprn:(r)/', meaning:'企业家', pos:'n'},
+  {word:'entry', phonetic:'/entri/', meaning:'进入；入口；条目', pos:'n'},
+  {word:'envelope', phonetic:'/envlp/', meaning:'信封', pos:'n'},
+  {word:'envy', phonetic:'/envi/', meaning:'嫉妒，羡慕', pos:'v/n'},
+  {word:'equal', phonetic:'/i:kwl/', meaning:'相等的；平等的', pos:'a'},
+  {word:'equality', phonetic:'/ikwlti/', meaning:'平等', pos:'n'},
+  {word:'equip', phonetic:'/kwp/', meaning:'装备，配备', pos:'v'},
+  {word:'equipment', phonetic:'/kwpmnt/', meaning:'设备，装备', pos:'n'},
+  {word:'equivalent', phonetic:'/kwvlnt/', meaning:'等价的；等价物', pos:'a/n'},
+  {word:'era', phonetic:'/r/', meaning:'时代，纪元', pos:'n'},
+  {word:'erect', phonetic:'/rekt/', meaning:'竖立；直立的', pos:'v/a'},
+  {word:'ermediate', phonetic:'/ntmi:dit/', meaning:'中级的；中间的', pos:'a'},
+  {word:'error', phonetic:'/er(r)/', meaning:'错误，误差', pos:'n'},
+  {word:'escape', phonetic:'/skep/', meaning:'逃跑，逃避', pos:'v'},
+  {word:'essence', phonetic:'/esns/', meaning:'本质，精髓', pos:'n'},
+  {word:'essential', phonetic:'/senl/', meaning:'必要的；本质的', pos:'a'},
+  {word:'estate', phonetic:'/stet/', meaning:'财产；房地产', pos:'n'},
+  {word:'estimate', phonetic:'/estmt/', meaning:'估计，估算', pos:'v'},
+  {word:'ethic', phonetic:'/ek/', meaning:'伦理，道德准则', pos:'n'},
+  {word:'evaluate', phonetic:'/v�ljuet/', meaning:'评价，评估', pos:'v'},
+  {word:'evaporate', phonetic:'/v�pret/', meaning:'蒸发', pos:'v'},
+  {word:'evidence', phonetic:'/evdns/', meaning:'证据', pos:'n'},
+  {word:'evident', phonetic:'/evdnt/', meaning:'明显的', pos:'a'},
+  {word:'evil', phonetic:'/i:vl/', meaning:'邪恶的；邪恶', pos:'a/n'},
+  {word:'evolution', phonetic:'/i:vlu:n/', meaning:'进化，演变', pos:'n'},
+  {word:'evolve', phonetic:'/ivlv/', meaning:'进化，发展', pos:'v'},
+  {word:'exaggerate', phonetic:'/gz�dret/', meaning:'夸张，夸大', pos:'v'},
+  {word:'exceed', phonetic:'/ksi:d/', meaning:'超过，超越', pos:'v'},
+  {word:'exceedingly', phonetic:'/ksi:dli/', meaning:'极其，非常', pos:'a'},
+  {word:'excess', phonetic:'/kses/', meaning:'过量；过度的', pos:'n'},
+  {word:'excessive', phonetic:'/ksesv/', meaning:'过度的', pos:'a'},
+  {word:'exclaim', phonetic:'/ksklem/', meaning:'呼喊，惊叫', pos:'v'},
+  {word:'exclusively', phonetic:'/k\'sklu:svl/', meaning:'专有地，仅仅', pos:'a'},
+  {word:'execute', phonetic:'/gzekjt/', meaning:'执行；处决', pos:'v'},
+  {word:'executive', phonetic:'/gzekjtv/', meaning:'行政的；主管', pos:'n/a'},
+  {word:'exert', phonetic:'/gz:t/', meaning:'施加；尽力', pos:'v'},
+  {word:'exhaust', phonetic:'/gz:st/', meaning:'耗尽；使筋疲力尽；排气', pos:'v'},
+  {word:'exhausted', phonetic:'/gz:std/', meaning:'筋疲力尽的', pos:'a'},
+  {word:'exhibit', phonetic:'/gzbt/', meaning:'展览；展示', pos:'v'},
+  {word:'exhibition', phonetic:'/eksbn/', meaning:'展览', pos:'n'},
+  {word:'exist', phonetic:'/gzst/', meaning:'存在；生存', pos:'v'},
+  {word:'existence', phonetic:'/gzstns/', meaning:'存在', pos:'n'},
+  {word:'expel', phonetic:'/kspel/', meaning:'驱逐；开除', pos:'v'},
+  {word:'experienced', phonetic:'/ksprinst/', meaning:'有经验的', pos:'a'},
+  {word:'experimental', phonetic:'/kspermentl/', meaning:'实验性的', pos:'a'},
+  {word:'expert', phonetic:'/eksp:t/', meaning:'专家；专业的', pos:'n'},
+  {word:'expertise', phonetic:'/eksp:ti:z/', meaning:'专业知识', pos:'n'},
+  {word:'explicit', phonetic:'/ksplst/', meaning:'明确的，清楚的', pos:'a'},
+  {word:'explode', phonetic:'/kspld/', meaning:'爆炸', pos:'v'},
+  {word:'exploit', phonetic:'/ksplt/', meaning:'利用；开发；剥削', pos:'v'},
+  {word:'explosion', phonetic:'/kspln/', meaning:'爆炸', pos:'n'},
+  {word:'explosive', phonetic:'/ksplsv/', meaning:'爆炸性的；炸药', pos:'a'},
+  {word:'expose', phonetic:'/k\'spz/', meaning:'暴露；揭露', pos:'v'},
+  {word:'exposure', phonetic:'/ksp(r)/', meaning:'暴露；曝光', pos:'n'},
+  {word:'extend', phonetic:'/kstend/', meaning:'扩展；延伸', pos:'v'},
+  {word:'extension', phonetic:'/kstenn/', meaning:'延伸；扩展名', pos:'n'},
+  {word:'extensive', phonetic:'/kstensv/', meaning:'广泛的，大量的', pos:'a'},
+  {word:'extinguish', phonetic:'/kstgw/', meaning:'熄灭；消灭', pos:'v'},
+  {word:'extraordinary', phonetic:'/kstr:dnri/', meaning:'非凡的，特别的', pos:'a'},
+  {word:'facilitate', phonetic:'/fsltet/', meaning:'促进，使便利', pos:'v'},
+  {word:'facility', phonetic:'/fslti/', meaning:'设施；设备；才能', pos:'n'},
+  {word:'faculty', phonetic:'/f�klti/', meaning:'能力；全体教员；学院', pos:'n'},
+  {word:'fade', phonetic:'/fed/', meaning:'褪色；逐渐消失', pos:'v'},
+  {word:'fair', phonetic:'/fe(r)/', meaning:'公平的；展览会；相当的', pos:'a'},
+  {word:'faithful', phonetic:'/fefl/', meaning:'忠诚的，忠实的', pos:'a'},
+  {word:'famine', phonetic:'/f�mn/', meaning:'饥荒', pos:'n'},
+  {word:'fancy', phonetic:'/f�nsi/', meaning:'想象；喜欢；花式的', pos:'n'},
+  {word:'fare', phonetic:'/fe(r)/', meaning:'票价；进展', pos:'n/v'},
+  {word:'farewell', phonetic:'/fewel/', meaning:'告别；再见', pos:'n'},
+  {word:'fasten', phonetic:'/f:sn/', meaning:'系紧，固定', pos:'v'},
+  {word:'fatal', phonetic:'/fetl/', meaning:'致命的', pos:'a'},
+  {word:'fate', phonetic:'/fet/', meaning:'命运', pos:'n'},
+  {word:'fatigue', phonetic:'/fti:g/', meaning:'疲劳', pos:'n'},
+  {word:'fault', phonetic:'/f:lt/', meaning:'错误；缺点；故障', pos:'n'},
+  {word:'faulty', phonetic:'/f:lti/', meaning:'有缺陷的', pos:'a'},
+  {word:'favor', phonetic:'/fev/', meaning:'支持；喜爱；恩惠', pos:'n/v'},
+  {word:'feasible', phonetic:'/fi:zbl/', meaning:'可行的', pos:'a'},
+  {word:'feature', phonetic:'/fi:t(r)/', meaning:'特点；特征；以...为特色', pos:'n'},
+  {word:'federal', phonetic:'/fedrl/', meaning:'联邦的', pos:'a'},
+  {word:'feedback', phonetic:'/fi:db�k/', meaning:'反馈', pos:'n'},
+  {word:'fellow', phonetic:'/fel/', meaning:'同伴；家伙；同事', pos:'n'},
+  {word:'fence', phonetic:'/fens/', meaning:'栅栏；围栏', pos:'n'},
+  {word:'fertile', phonetic:'/f:tal/', meaning:'肥沃的；能生育的', pos:'a'},
+  {word:'fertilizer', phonetic:'/f:tlaz(r)/', meaning:'肥料', pos:'n'},
+  {word:'fetch', phonetic:'/fet/', meaning:'取来，拿来', pos:'v'},
+  {word:'fever', phonetic:'/fi:v(r)/', meaning:'发烧；狂热', pos:'n'},
+  {word:'fierce', phonetic:'/fs/', meaning:'凶猛的；激烈的', pos:'a'},
+  {word:'filter', phonetic:'/flt(r)/', meaning:'过滤器；过滤', pos:'v/n'},
+  {word:'finite', phonetic:'/fanat/', meaning:'有限的', pos:'a'},
+  {word:'fist', phonetic:'/fst/', meaning:'拳头', pos:'n'},
+  {word:'flame', phonetic:'/flem/', meaning:'火焰', pos:'n/v'},
+  {word:'flesh', phonetic:'/flen.  28. bound [band/', meaning:'肉；肉体', pos:'a'},
+  {word:'flexible', phonetic:'/fleksbl/', meaning:'灵活的；柔韧的', pos:'a'},
+  {word:'flight', phonetic:'/flat/', meaning:'飞行；航班', pos:'n'},
+  {word:'float', phonetic:'/flt/', meaning:'漂浮；浮动', pos:'v'},
+  {word:'flock', phonetic:'/flk/', meaning:'一群（鸟、羊等）；聚集', pos:'n/v'},
+  {word:'flow', phonetic:'/fl/', meaning:'流动；流量', pos:'v/n'},
+  {word:'fluctuate', phonetic:'/flktuet/', meaning:'波动，起伏', pos:'v'},
+  {word:'fluent', phonetic:'/flu:nt/', meaning:'流利的，流畅的', pos:'a'},
+  {word:'fluid', phonetic:'/flu:d/', meaning:'液体；流体的', pos:'n/a'},
+  {word:'fond', phonetic:'/fnd/', meaning:'喜欢的；深情的', pos:'a'},
+  {word:'forbid', phonetic:'/fbd/', meaning:'禁止', pos:'v'},
+  {word:'forecast', phonetic:'/f:k:st/', meaning:'预报，预测', pos:'n/v'},
+  {word:'foremost', phonetic:'/f:mst/', meaning:'最重要的；首先', pos:'a'},
+  {word:'forest', phonetic:'/frst/', meaning:'森林', pos:'n'},
+  {word:'forge', phonetic:'/f:d/', meaning:'锻造；伪造', pos:'v/v'},
+  {word:'fork', phonetic:'/f:k/', meaning:'叉子；分叉', pos:'n'},
+  {word:'format', phonetic:'/f:m�t/', meaning:'格式；格式化', pos:'n'},
+  {word:'former', phonetic:'/f:m(r)/', meaning:'前者的；从前的', pos:'a'},
+  {word:'formula', phonetic:'/f:mjl/', meaning:'公式；方案', pos:'n'},
+  {word:'formulate', phonetic:'/f:mjulet/', meaning:'制定；表达', pos:'v'},
+  {word:'forthcoming', phonetic:'/f:km/', meaning:'即将到来的', pos:'a'},
+  {word:'fortunately', phonetic:'/f:tntli/', meaning:'幸运地', pos:'a'},
+  {word:'forum', phonetic:'/f:rm/', meaning:'论坛', pos:'n'},
+  {word:'foster', phonetic:'/fst(r)/', meaning:'培养；促进', pos:'v'},
+  {word:'foundation', phonetic:'/fanden/', meaning:'基础；基金会', pos:'n'},
+  {word:'fraction', phonetic:'/fr�kn/', meaning:'部分；分数', pos:'n'},
+  {word:'fragment', phonetic:'/fragmant/', meaning:'碎片，片段', pos:'n'},
+  {word:'framework', phonetic:'/fremw:k/', meaning:'框架；结构', pos:'n'},
+  {word:'freeze', phonetic:'/fri:z/', meaning:'冻结；结冰', pos:'v'},
+  {word:'freight', phonetic:'/fret/', meaning:'货物；货运', pos:'n/v'},
+  {word:'frontier', phonetic:'/frnt(r)/', meaning:'边境；前沿', pos:'n'},
+  {word:'frost', phonetic:'/frst/', meaning:'霜；结霜', pos:'n/v'},
+  {word:'fruitful', phonetic:'/fru:tfl/', meaning:'富有成效的', pos:'a'},
+  {word:'frustration', phonetic:'/frstren/', meaning:'挫折，沮丧', pos:'n'},
+  {word:'fuel', phonetic:'/fju:l/', meaning:'燃料；加油', pos:'n/v'},
+  {word:'fulfill', phonetic:'/fl\'fl/', meaning:'实现；满足；履行', pos:'v'},
+  {word:'fund', phonetic:'/fnd/', meaning:'基金；资助', pos:'n'},
+  {word:'fundamental', phonetic:'/fndmentl/', meaning:'基本的；基本原理', pos:'a'},
+  {word:'funeral', phonetic:'/fju:nrl/', meaning:'葬礼', pos:'n'},
+  {word:'furnish', phonetic:'/f:n/', meaning:'提供；布置家具', pos:'v'},
+  {word:'furniture', phonetic:'/f:nt(r)/', meaning:'家具', pos:'n'},
+  {word:'further', phonetic:'/f:�(r)/', meaning:'进一步的；促进；而且', pos:'a'},
+  {word:'fuss', phonetic:'/fs/', meaning:'大惊小怪', pos:'n/v'},
+  {word:'gang', phonetic:'/g�/', meaning:'一帮，一伙', pos:'n'},
+  {word:'gap', phonetic:'/g�p/', meaning:'缺口；差距；隔阂', pos:'n'},
+  {word:'garage', phonetic:'/g�r:/', meaning:'车库', pos:'n'},
+  {word:'gas', phonetic:'/g�s/', meaning:'气体；汽油', pos:'n'},
+  {word:'gene', phonetic:'/di:n/', meaning:'基因', pos:'n'},
+  {word:'generation', phonetic:'/denren/', meaning:'一代；产生', pos:'n'},
+  {word:'generator', phonetic:'/denret(r)/', meaning:'发电机', pos:'n'},
+  {word:'genius', phonetic:'/di:nis/', meaning:'天才', pos:'n'},
+  {word:'genuine', phonetic:'/denjuin/', meaning:'真正的；真诚的', pos:'a'},
+  {word:'geography', phonetic:'/digrfi/', meaning:'地理', pos:'n'},
+  {word:'geology', phonetic:'/di:\'ld/', meaning:'地质学', pos:'n'},
+  {word:'germ', phonetic:'/d:m/', meaning:'细菌，病菌', pos:'n'},
+  {word:'ghost', phonetic:'/gst/', meaning:'鬼；幽灵', pos:'n'},
+  {word:'glance', phonetic:'/gl:ns/', meaning:'一瞥；扫视', pos:'n/v'},
+  {word:'glimpse', phonetic:'/glmps/', meaning:'一瞥，瞥见', pos:'v/n'},
+  {word:'glory', phonetic:'/gl:ri/', meaning:'荣耀，光荣', pos:'n'},
+  {word:'goat', phonetic:'/gt/', meaning:'山羊', pos:'n'},
+  {word:'goodness', phonetic:'/gdns/', meaning:'善良；天哪', pos:'int/n'},
+  {word:'goose', phonetic:'/gu:s/', meaning:'鹅', pos:'n'},
+  {word:'gossip', phonetic:'/gsp/', meaning:'八卦；闲聊', pos:'n/v'},
+  {word:'governor', phonetic:'/gvn(r)/', meaning:'州长；总督；管理者', pos:'n'},
+  {word:'graceful', phonetic:'/gresfl/', meaning:'优雅的，得体的', pos:'a'},
+  {word:'gradual', phonetic:'/gr�dul/', meaning:'逐渐的', pos:'a'},
+  {word:'grand', phonetic:'/gr�nd/', meaning:'宏伟的；重大的', pos:'a'},
+  {word:'grant', phonetic:'/gr:nt/', meaning:'授予；拨款', pos:'v'},
+  {word:'grasp', phonetic:'/gr:sp/', meaning:'抓住；理解', pos:'v'},
+  {word:'gratitude', phonetic:'/gr�ttju:d/', meaning:'感激，感谢', pos:'n'},
+  {word:'grave', phonetic:'/rev/', meaning:'严重的；坟墓', pos:'n/a'},
+  {word:'gravity', phonetic:'/gr�vti/', meaning:'重力；严肃性', pos:'n'},
+  {word:'greedy', phonetic:'/gri:di/', meaning:'贪婪的', pos:'a'},
+  {word:'greet', phonetic:'/gri:t/', meaning:'问候，迎接', pos:'v'},
+  {word:'greeting', phonetic:'/gri:t/', meaning:'问候，招呼', pos:'n'},
+  {word:'grief', phonetic:'/gri:f/', meaning:'悲伤，悲痛', pos:'n'},
+  {word:'grin', phonetic:'/grn/', meaning:'咧嘴笑', pos:'v'},
+  {word:'gross', phonetic:'/grs/', meaning:'总的；严重的；毛的', pos:'a'},
+  {word:'guarantee', phonetic:'/g�rnti:/', meaning:'保证；担保', pos:'n/v'},
+  {word:'guidance', phonetic:'/gadns/', meaning:'指导，引导', pos:'n'},
+  {word:'guideline', phonetic:'/gadlan/', meaning:'指导方针，准则', pos:'n'},
+  {word:'guilty', phonetic:'/glti/', meaning:'有罪的；内疚的', pos:'a'},
+  {word:'gulf', phonetic:'/glf/', meaning:'海湾；鸿沟', pos:'n'},
+  {word:'habitat', phonetic:'/h�bt�t/', meaning:'栖息地', pos:'n'},
+  {word:'hack', phonetic:'/h�k/', meaning:'黑客；侵入；砍', pos:'v/n'},
+  {word:'hall', phonetic:'/h:l/', meaning:'大厅；走廊', pos:'n'},
+  {word:'ham', phonetic:'/h�m/', meaning:'火腿', pos:'n'},
+  {word:'handkerchief', phonetic:'/h�ktf/', meaning:'手帕', pos:'n'},
+  {word:'hardship', phonetic:'/h:dp/', meaning:'困难，艰辛', pos:'n'},
+  {word:'hardware', phonetic:'/h:dwe(r)/', meaning:'硬件', pos:'n'},
+  {word:'harmonious', phonetic:'/h:mnis/', meaning:'和谐的，融洽的', pos:'a'},
+  {word:'harmony', phonetic:'/h:mni/', meaning:'和谐，融洽', pos:'n'},
+  {word:'harness', phonetic:'/h:ns/', meaning:'利用；马具', pos:'v'},
+  {word:'harsh', phonetic:'/h:/', meaning:'严厉的；刺耳的', pos:'a'},
+  {word:'harvest', phonetic:'/h:vst/', meaning:'收获；收割', pos:'n/v'},
+  {word:'haste', phonetic:'/hest/', meaning:'匆忙，仓促', pos:'n'},
+  {word:'hatch', phonetic:'/h�t/', meaning:'孵化；策划', pos:'v/n'},
+  {word:'hatred', phonetic:'/hetrd/', meaning:'仇恨', pos:'n'},
+  {word:'haul', phonetic:'/h:l/', meaning:'拖，拉', pos:'v/n'},
+  {word:'haunt', phonetic:'/h:nt/', meaning:'萦绕；常去的地方', pos:'v/n'},
+  {word:'hazard', phonetic:'/h�zd/', meaning:'危险；风险', pos:'n'},
+  {word:'hazardous', phonetic:'/h�zds/', meaning:'危险的', pos:'a'},
+  {word:'headache', phonetic:'/hedek/', meaning:'头痛', pos:'n'},
+  {word:'headline', phonetic:'/hedlan/', meaning:'标题；头条新闻', pos:'n/v'},
+  {word:'headquarters', phonetic:'/hedkw:tz/', meaning:'总部', pos:'n'},
+  {word:'heat', phonetic:'/hi:t/', meaning:'热；加热', pos:'n/v'},
+  {word:'heaven', phonetic:'/hevn/', meaning:'天堂', pos:'n'},
+  {word:'hell', phonetic:'/hel/', meaning:'地狱', pos:'n'},
+  {word:'hence', phonetic:'/hence/', meaning:'因此，所以', pos:'a'},
+  {word:'hereby', phonetic:'/hba/', meaning:'特此，兹', pos:'a'},
+  {word:'highlight', phonetic:'/halat/', meaning:'强调；亮点；高亮', pos:'v'},
+  {word:'hinder', phonetic:'/hnd(r)/', meaning:'阻碍，妨碍', pos:'v'},
+  {word:'hole', phonetic:'/hl/', meaning:'洞，孔', pos:'n'},
+  {word:'hollow', phonetic:'/hl/', meaning:'中空的；空洞的', pos:'a'},
+  {word:'honest', phonetic:'/nst/', meaning:'诚实的', pos:'a'},
+  {word:'horizon', phonetic:'/hrazn/', meaning:'地平线；眼界', pos:'n'},
+  {word:'horizontal', phonetic:'/hrzntl/', meaning:'水平的；水平线', pos:'a'},
+  {word:'hospitable', phonetic:'/hsptbl/', meaning:'好客的；宜人的', pos:'a'},
+  {word:'hostile', phonetic:'/hstal/', meaning:'敌对的；不利的', pos:'a'},
+  {word:'humble', phonetic:'/hmbl/', meaning:'谦逊的；简陋的', pos:'a'},
+  {word:'ideal', phonetic:'/adi:l/', meaning:'理想的；理想', pos:'a/n'},
+  {word:'idealistic', phonetic:'/adilstk/', meaning:'理想主义的', pos:'a'},
+  {word:'identical', phonetic:'/adentkl/', meaning:'完全相同的', pos:'a'},
+  {word:'identify', phonetic:'/adentfa/', meaning:'识别，确认', pos:'v'},
+  {word:'idle', phonetic:'/adl/', meaning:'闲置的；懒散的', pos:'a'},
+  {word:'igate', phonetic:'/n�vget/', meaning:'灌溉', pos:'v'},
+  {word:'igorous', phonetic:'/vgrs/', meaning:'有活力的', pos:'a'},
+  {word:'illustrate', phonetic:'/lstret/', meaning:'说明，阐明；举例', pos:'v'},
+  {word:'imitate', phonetic:'/mtet/', meaning:'模仿，仿效', pos:'v'},
+  {word:'immediate', phonetic:'/mi:dit/', meaning:'立即的；直接的', pos:'a/int'},
+  {word:'immense', phonetic:'/\'mens/', meaning:'巨大的', pos:'a'},
+  {word:'imperial', phonetic:'/mpril/', meaning:'帝国的；皇帝的', pos:'a'},
+  {word:'implement', phonetic:'/implimnt/', meaning:'实施；工具', pos:'v/n'},
+  {word:'implication', phonetic:'/mplken/', meaning:'含义；影响', pos:'n'},
+  {word:'implicit', phonetic:'/mplst/', meaning:'含蓄的；隐含的', pos:'a'},
+  {word:'imply', phonetic:'/mpla/', meaning:'暗示，意味着', pos:'v'},
+  {word:'impose', phonetic:'/mpz/', meaning:'强加；征收', pos:'v'},
+  {word:'imposing', phonetic:'/mpz/', meaning:'壮观的；令人印象深刻的', pos:'a'},
+  {word:'impulse', phonetic:'/mpls/', meaning:'冲动；脉冲', pos:'n'},
+  {word:'incentive', phonetic:'/nsentv/', meaning:'激励，奖励', pos:'n'},
+  {word:'inch', phonetic:'/nt/', meaning:'英寸', pos:'n'},
+  {word:'incidence', phonetic:'/nsdns/', meaning:'发生率', pos:'n'},
+  {word:'incline', phonetic:'/nklan/', meaning:'倾向；斜坡', pos:'v/n'},
+  {word:'inclusive', phonetic:'/nklu:sv/', meaning:'包含的；包容的', pos:'a'},
+  {word:'increase', phonetic:'/nkri:s/', meaning:'增加，增长', pos:'v'},
+  {word:'increasingly', phonetic:'/n\'kri:sly/', meaning:'越来越地', pos:'a'},
+  {word:'incredible', phonetic:'/nkredbl/', meaning:'难以置信的', pos:'a'},
+  {word:'indeed', phonetic:'/ndi:d/', meaning:'确实', pos:'a'},
+  {word:'index', phonetic:'/ndeks/', meaning:'索引；指数；指标', pos:'n'},
+  {word:'indicate', phonetic:'/ndket/', meaning:'表明，指示', pos:'v'},
+  {word:'indication', phonetic:'/ndken/', meaning:'指示；迹象', pos:'n'},
+  {word:'indifferent', phonetic:'/ndfrnt/', meaning:'漠不关心的；一般的', pos:'a'},
+  {word:'indirect', phonetic:'/ndrekt/', meaning:'间接的', pos:'a'},
+  {word:'indispensable', phonetic:'/ndspensbl/', meaning:'不可或缺的', pos:'a'},
+  {word:'industrialize', phonetic:'/ndstrilaz/', meaning:'工业化', pos:'v'},
+  {word:'inevitable', phonetic:'/nevtbl/', meaning:'不可避免的', pos:'a'},
+  {word:'infant', phonetic:'/nfnt/', meaning:'婴儿；初期的', pos:'n/a'},
+  {word:'infect', phonetic:'/nfekt/', meaning:'感染', pos:'v'},
+  {word:'infectious', phonetic:'/nfeks/', meaning:'传染性的', pos:'a'},
+  {word:'infer', phonetic:'/nf:(r)/', meaning:'推断，推论', pos:'v'},
+  {word:'inferior', phonetic:'/nfri(r)/', meaning:'低等的；下级', pos:'a'},
+  {word:'infinite', phonetic:'/nfnt/', meaning:'无限的', pos:'a'},
+  {word:'inflate', phonetic:'/nflet/', meaning:'膨胀；充气', pos:'v'},
+  {word:'inflation', phonetic:'/nflen/', meaning:'通货膨胀', pos:'n'},
+  {word:'inform', phonetic:'/nf:m/', meaning:'通知，告知', pos:'v'},
+  {word:'ingredient', phonetic:'/ngri:dint/', meaning:'成分，原料', pos:'n'},
+  {word:'inhabit', phonetic:'/nh�bt/', meaning:'居住于', pos:'v'},
+  {word:'inhabitant', phonetic:'/nh�btnt/', meaning:'居民', pos:'n'},
+  {word:'inherit', phonetic:'/nhert/', meaning:'继承', pos:'v'},
+  {word:'initial', phonetic:'/nl/', meaning:'最初的；首字母', pos:'a'},
+  {word:'initiate', phonetic:'/niet/', meaning:'开始，发起', pos:'v'},
+  {word:'initiative', phonetic:'/ntv/', meaning:'主动性；倡议', pos:'n'},
+  {word:'injection', phonetic:'/ndekn/', meaning:'注射', pos:'n'},
+  {word:'injure', phonetic:'/nd(r)/', meaning:'伤害，损害', pos:'v'},
+  {word:'injury', phonetic:'/ndri/', meaning:'伤害，损伤', pos:'n'},
+  {word:'innocent', phonetic:'/nsnt/', meaning:'无辜的；天真的', pos:'a'},
+  {word:'innovate', phonetic:'/nvet/', meaning:'创新，革新', pos:'v'},
+  {word:'innovation', phonetic:'/nven/', meaning:'创新，革新', pos:'n'},
+  {word:'innovative', phonetic:'/nvetv/', meaning:'创新的', pos:'a'},
+  {word:'input', phonetic:'/npt/', meaning:'输入；投入', pos:'n/v'},
+  {word:'insane', phonetic:'/nsen/', meaning:'疯狂的', pos:'a'},
+  {word:'insect', phonetic:'/nsekt/', meaning:'昆虫', pos:'n'},
+  {word:'insight', phonetic:'/nsat/', meaning:'洞察力，深刻见解', pos:'n'},
+  {word:'insist', phonetic:'/nsst/', meaning:'坚持，坚决主张', pos:'v'},
+  {word:'inspect', phonetic:'/nspekt/', meaning:'检查，视察', pos:'v'},
+  {word:'install', phonetic:'/nst:l/', meaning:'安装', pos:'v'},
+  {word:'installment', phonetic:'/n\'st:lmnt/', meaning:'分期付款；安装', pos:'n'},
+  {word:'instance', phonetic:'/nstns/', meaning:'例子，实例', pos:'n'},
+  {word:'instant', phonetic:'/nstnt/', meaning:'立即的；瞬间', pos:'a/n'},
+  {word:'instinct', phonetic:'/nstkt/', meaning:'本能，直觉', pos:'n'},
+  {word:'institute', phonetic:'/nsttju:t/', meaning:'学院；建立', pos:'n'},
+  {word:'institution', phonetic:'/nsttju:n/', meaning:'机构；制度', pos:'n'},
+  {word:'instruction', phonetic:'/nstrkn/', meaning:'指导；指令；说明', pos:'n'},
+  {word:'instrument', phonetic:'/nstrmnt/', meaning:'工具；乐器', pos:'n'},
+  {word:'insult', phonetic:'/nslt/', meaning:'侮辱，冒犯', pos:'v'},
+  {word:'insurance', phonetic:'/nrns/', meaning:'保险', pos:'n'},
+  {word:'insure', phonetic:'/n(r)/', meaning:'给...保险；确保', pos:'v'},
+  {word:'intact', phonetic:'/nt�kt/', meaning:'完好无损的', pos:'a'},
+  {word:'intake', phonetic:'/ntek/', meaning:'吸入；摄入量', pos:'n'},
+  {word:'intangible', phonetic:'/nt�ndbl/', meaning:'无形的', pos:'a'},
+  {word:'integrate', phonetic:'/ntgret/', meaning:'整合；融入', pos:'v'},
+  {word:'integrity', phonetic:'/ntegrti/', meaning:'正直；完整', pos:'n'},
+  {word:'intelligent', phonetic:'/nteldnt/', meaning:'聪明的，智能的', pos:'a/int'},
+  {word:'intense', phonetic:'/ntens/', meaning:'强烈的；激烈的', pos:'a'},
+  {word:'intensive', phonetic:'/ntensv/', meaning:'密集的；加强的', pos:'a'},
+  {word:'interfere', phonetic:'/ntf(r)/', meaning:'干涉，干扰', pos:'v'},
+  {word:'interior', phonetic:'/ntri(r)/', meaning:'内部；内部的', pos:'a/n'},
+  {word:'international', phonetic:'/ntn�nl/', meaning:'国际的', pos:'a'},
+  {word:'internet', phonetic:'/ntnet/', meaning:'互联网', pos:'n'},
+  {word:'interpret', phonetic:'/nt:prt/', meaning:'解释；口译', pos:'v'},
+  {word:'interrupt', phonetic:'/ntrpt/', meaning:'打断，中断', pos:'v'},
+  {word:'interval', phonetic:'/ntvl/', meaning:'间隔；休息时间', pos:'n'},
+  {word:'intimate', phonetic:'/ntmt/', meaning:'亲密的；暗示', pos:'a/n'},
+  {word:'intrude', phonetic:'/ntru:d/', meaning:'闯入，打扰', pos:'v'},
+  {word:'invade', phonetic:'/nved/', meaning:'入侵，侵略', pos:'v/v'},
+  {word:'invaluable', phonetic:'/nv�ljubl/', meaning:'无价的，极其宝贵的', pos:'a'},
+  {word:'invasion', phonetic:'/nven/', meaning:'入侵，侵略', pos:'n'},
+  {word:'investigate', phonetic:'/nvstet/', meaning:'调查，研究', pos:'v'},
+  {word:'invisible', phonetic:'/nvzbl/', meaning:'看不见的，隐形的', pos:'a/v'},
+  {word:'iron', phonetic:'/an/', meaning:'铁；熨斗；熨', pos:'n/v/a'},
+  {word:'irrational', phonetic:'/r�nl/', meaning:'不合理的，非理性的', pos:'a'},
+  {word:'irregular', phonetic:'/regjl(r)/', meaning:'不规则的', pos:'a'},
+  {word:'irrigate', phonetic:'/rget/', meaning:'灌溉', pos:'v'},
+  {word:'ision', phonetic:'/vn/', meaning:'视力；愿景', pos:'n'},
+  {word:'isolate', phonetic:'/aslet/', meaning:'隔离，孤立', pos:'v'},
+  {word:'issue', phonetic:'/u:/', meaning:'问题；议题；发行', pos:'n/v'},
+  {word:'item', phonetic:'/atm/', meaning:'项目；物品；条', pos:'n'},
+  {word:'jail', phonetic:'/del/', meaning:'监狱；监禁', pos:'n/v'},
+  {word:'jealous', phonetic:'/dels/', meaning:'嫉妒的', pos:'a'},
+  {word:'jewel', phonetic:'/du:l/', meaning:'宝石', pos:'n'},
+  {word:'joint', phonetic:'/dnt/', meaning:'关节；联合的；共同的', pos:'a'},
+  {word:'journal', phonetic:'/d:nl/', meaning:'期刊；日志', pos:'n'},
+  {word:'journalism', phonetic:'/d:nlzm/', meaning:'新闻业', pos:'n'},
+  {word:'jury', phonetic:'/dri/', meaning:'陪审团', pos:'n'},
+  {word:'justice', phonetic:'/dsts/', meaning:'正义；司法', pos:'n'},
+  {word:'keen', phonetic:'/ki:n/', meaning:'渴望的；敏锐的', pos:'a'},
+  {word:'knit', phonetic:'/nt/', meaning:'编织；紧密结合', pos:'v'},
+  {word:'knot', phonetic:'/nt/', meaning:'结；节（速度单位）', pos:'n/v'},
+  {word:'label', phonetic:'/lebl/', meaning:'标签；标注', pos:'n/v'},
+  {word:'ladder', phonetic:'/l�d(r)/', meaning:'梯子', pos:'n'},
+  {word:'land', phonetic:'/l�nd/', meaning:'土地；着陆', pos:'n/v'},
+  {word:'landlord', phonetic:'/l�ndl:d/', meaning:'房东；地主', pos:'n'},
+  {word:'lane', phonetic:'/len/', meaning:'车道；小巷', pos:'n'},
+  {word:'latter', phonetic:'/l�t(r)/', meaning:'后者的；后面的', pos:'a'},
+  {word:'launch', phonetic:'/l:nt/', meaning:'发射；发起；推出', pos:'v'},
+  {word:'layout', phonetic:'/leat/', meaning:'布局，安排', pos:'n'},
+  {word:'league', phonetic:'/li:g/', meaning:'联盟；联赛', pos:'n'},
+  {word:'leap', phonetic:'/li:p/', meaning:'跳跃；飞跃', pos:'v/n'},
+  {word:'lease', phonetic:'/li:s/', meaning:'租约；出租', pos:'n/v'},
+  {word:'legislate', phonetic:'/ledslet/', meaning:'立法', pos:'v'},
+  {word:'leisure', phonetic:'/le(r)/', meaning:'休闲；闲暇', pos:'n/a'},
+  {word:'length', phonetic:'/le/', meaning:'长度', pos:'n'},
+  {word:'lessen', phonetic:'/lesn/', meaning:'减少，减轻', pos:'v'},
+  {word:'liable', phonetic:'/labl/', meaning:'有责任的；有...倾向的', pos:'a'},
+  {word:'liberate', phonetic:'/lbret/', meaning:'解放', pos:'v'},
+  {word:'liberty', phonetic:'/lbti/', meaning:'自由', pos:'n'},
+  {word:'lick', phonetic:'/lk/', meaning:'舔', pos:'v'},
+  {word:'lid', phonetic:'/ld/', meaning:'盖子', pos:'n'},
+  {word:'likewise', phonetic:'/lakwaz/', meaning:'同样地；也', pos:'a'},
+  {word:'lip', phonetic:'/lp/', meaning:'嘴唇', pos:'n'},
+  {word:'liquid', phonetic:'/lkwd/', meaning:'液体；液态的', pos:'n/a'},
+  {word:'liquor', phonetic:'/lk(r)/', meaning:'烈酒', pos:'n'},
+  {word:'literal', phonetic:'/ltrl/', meaning:'字面的；逐字的', pos:'a'},
+  {word:'loan', phonetic:'/ln/', meaning:'贷款；借出', pos:'n/v'},
+  {word:'lobby', phonetic:'/lbi/', meaning:'大厅；游说', pos:'n/v'},
+  {word:'logic', phonetic:'/ldk/', meaning:'逻辑', pos:'n'},
+  {word:'logical', phonetic:'/ldkl/', meaning:'符合逻辑的', pos:'a'},
+  {word:'loop', phonetic:'/lu:p/', meaning:'循环；环状', pos:'n'},
+  {word:'lord', phonetic:'/l:d/', meaning:'贵族；主（上帝）', pos:'n'},
+  {word:'loyal', phonetic:'/ll/', meaning:'忠诚的', pos:'a'},
+  {word:'loyalty', phonetic:'/llti/', meaning:'忠诚', pos:'n'},
+  {word:'lunar', phonetic:'/lu:n(r)/', meaning:'月亮的；阴历的', pos:'a'},
+  {word:'luxurious', phonetic:'/lgris/', meaning:'豪华的，奢侈的', pos:'a'},
+  {word:'luxury', phonetic:'/lkri/', meaning:'奢侈；奢侈品', pos:'n'},
+  {word:'machine', phonetic:'/mi:n/', meaning:'机器', pos:'n'},
+  {word:'mad', phonetic:'/m�d/', meaning:'疯狂的；生气的', pos:'a'},
+  {word:'magnetic', phonetic:'/m�gnetk/', meaning:'磁性的；有吸引力的', pos:'a'},
+  {word:'maiden', phonetic:'/medn/', meaning:'少女；首次的', pos:'n'},
+  {word:'mailbox', phonetic:'/melbks/', meaning:'邮箱', pos:'n'},
+  {word:'mainland', phonetic:'/menl�nd/', meaning:'大陆', pos:'n'},
+  {word:'maintain', phonetic:'/menten/', meaning:'维持；维护；主张', pos:'v'},
+  {word:'majority', phonetic:'/mdrti/', meaning:'大多数', pos:'n'},
+  {word:'manipulate', phonetic:'/mnpjulet/', meaning:'操纵；操作', pos:'v'},
+  {word:'manner', phonetic:'/m�n(r)/', meaning:'方式；礼貌', pos:'n'},
+  {word:'manual', phonetic:'/m�njul/', meaning:'手册；手工的', pos:'a/n'},
+  {word:'manufacture', phonetic:'/m�njuf�kt(r)/', meaning:'制造；制造业', pos:'v'},
+  {word:'marathon', phonetic:'/m�rn/', meaning:'马拉松', pos:'n'},
+  {word:'margin', phonetic:'/m:dn/', meaning:'边缘；利润；页边距', pos:'n'},
+  {word:'marine', phonetic:'/mri:n/', meaning:'海洋的；海军的', pos:'a'},
+  {word:'marsh', phonetic:'/m:/', meaning:'沼泽', pos:'n'},
+  {word:'marshal', phonetic:'/m:l/', meaning:'元帅；整理', pos:'n/v'},
+  {word:'marvel', phonetic:'/m:vl/', meaning:'奇迹；惊叹', pos:'n/v'},
+  {word:'marvelous', phonetic:'/mvls/', meaning:'了不起的，非凡的', pos:'a'},
+  {word:'marxist', phonetic:'/m:ksst/', meaning:'马克思主义者', pos:'n/a'},
+  {word:'masterpiece', phonetic:'/m:stpi:s/', meaning:'杰作', pos:'n'},
+  {word:'mat', phonetic:'/m�t/', meaning:'垫子', pos:'n'},
+  {word:'mature', phonetic:'/mt(r)/', meaning:'成熟的；使成熟', pos:'a/v'},
+  {word:'maximum', phonetic:'/m�ksmm/', meaning:'最大的；最大值', pos:'n/a'},
+  {word:'measurement', phonetic:'/memnt/', meaning:'测量；尺寸', pos:'n'},
+  {word:'mechanical', phonetic:'/mk�nkl/', meaning:'机械的', pos:'a'},
+  {word:'medal', phonetic:'/medl/', meaning:'奖章', pos:'n'},
+  {word:'medical', phonetic:'/medkl/', meaning:'医学的；医疗的', pos:'a'},
+  {word:'medicine', phonetic:'/medsn/', meaning:'医学；药物', pos:'n'},
+  {word:'medium', phonetic:'/mi:dim/', meaning:'中等的；媒介；培养基', pos:'n/a'},
+  {word:'melon', phonetic:'/meln/', meaning:'瓜，甜瓜', pos:'n'},
+  {word:'melt', phonetic:'/melt/', meaning:'融化；熔化', pos:'v'},
+  {word:'mend', phonetic:'/mend/', meaning:'修理，修补', pos:'v'},
+  {word:'merchant', phonetic:'/m:tnt/', meaning:'商人；商业的', pos:'n'},
+  {word:'mercifully', phonetic:'/m:sfli/', meaning:'仁慈地；幸运地', pos:'a'},
+  {word:'mercy', phonetic:'/m:si/', meaning:'仁慈，宽恕', pos:'n'},
+  {word:'merit', phonetic:'/mert/', meaning:'优点；价值；值得', pos:'n'},
+  {word:'metal', phonetic:'/metl/', meaning:'金属', pos:'n'},
+  {word:'microphone', phonetic:'/makrfn/', meaning:'麦克风', pos:'n'},
+  {word:'microscope', phonetic:'/makrskp/', meaning:'显微镜', pos:'n'},
+  {word:'microwave', phonetic:'/makrwev/', meaning:'微波；微波炉', pos:'n'},
+  {word:'midday', phonetic:'/mdde/', meaning:'中午', pos:'n'},
+  {word:'migrant', phonetic:'/magrnt/', meaning:'移民；候鸟', pos:'n'},
+  {word:'migrate', phonetic:'/magret/', meaning:'迁移；移居', pos:'v'},
+  {word:'mineral', phonetic:'/mnrl/', meaning:'矿物；矿物的', pos:'n'},
+  {word:'minister', phonetic:'/mnst(r)/', meaning:'部长；大臣', pos:'n'},
+  {word:'ministry', phonetic:'/mnstri/', meaning:'部；政府部门', pos:'n'},
+  {word:'minor', phonetic:'/man(r)/', meaning:'较小的；次要的；未成年人', pos:'a'},
+  {word:'minority', phonetic:'/manrti/', meaning:'少数；少数民族', pos:'n'},
+  {word:'miracle', phonetic:'/mrkl/', meaning:'奇迹', pos:'n'},
+  {word:'mirror', phonetic:'/mr(r)/', meaning:'镜子；反映', pos:'n/v'},
+  {word:'miserable', phonetic:'/mizrbl/', meaning:'痛苦的，悲惨的', pos:'a'},
+  {word:'mislead', phonetic:'/msli:d/', meaning:'误导', pos:'v'},
+  {word:'mission', phonetic:'/mn/', meaning:'使命，任务', pos:'n'},
+  {word:'mode', phonetic:'/md/', meaning:'模式；方式', pos:'n'},
+  {word:'model', phonetic:'/mdl/', meaning:'模型；模特；模范', pos:'n/v/a'},
+  {word:'moderate', phonetic:'/mdrt/', meaning:'适度的；温和的；缓和', pos:'a/v'},
+  {word:'modern', phonetic:'/mdn/', meaning:'现代的', pos:'a'},
+  {word:'modest', phonetic:'/mdst/', meaning:'谦虚的；适度的', pos:'a'},
+  {word:'modify', phonetic:'/mdfa/', meaning:'修改，调整', pos:'v'},
+  {word:'moist', phonetic:'/mst/', meaning:'潮湿的', pos:'a'},
+  {word:'moisture', phonetic:'/mst(r)/', meaning:'水分，湿气', pos:'n'},
+  {word:'monetary', phonetic:'/mntri/', meaning:'货币的，金融的', pos:'a'},
+  {word:'mop', phonetic:'/mp/', meaning:'拖把；拖地', pos:'n/v'},
+  {word:'moral', phonetic:'/mrl/', meaning:'道德的；道德', pos:'a/n'},
+  {word:'moreover', phonetic:'/m:rv(r)/', meaning:'此外，而且', pos:'a'},
+  {word:'mortgage', phonetic:'/m:gd/', meaning:'抵押贷款', pos:'n'},
+  {word:'motivate', phonetic:'/mtvet/', meaning:'激励，激发', pos:'v'},
+  {word:'motivation', phonetic:'/mt\'ven/', meaning:'动机，动力', pos:'n'},
+  {word:'mount', phonetic:'/mant/', meaning:'安装；登上；山', pos:'v'},
+  {word:'mouse', phonetic:'/mas/', meaning:'老鼠；鼠标', pos:'n'},
+  {word:'mouth', phonetic:'/ma/', meaning:'嘴巴；口', pos:'n'},
+  {word:'multiple', phonetic:'/mltpl/', meaning:'多个的；倍数', pos:'a'},
+  {word:'multiply', phonetic:'/mltpla/', meaning:'乘；增加；繁殖', pos:'v'},
+  {word:'municipal', phonetic:'/mju:nspl/', meaning:'市政的', pos:'a'},
+  {word:'murder', phonetic:'/m:d(r)/', meaning:'谋杀；凶杀', pos:'n/v'},
+  {word:'muscle', phonetic:'/msl/', meaning:'肌肉', pos:'n'},
+  {word:'mushroom', phonetic:'/mrm/', meaning:'蘑菇；迅速增长', pos:'n/v'},
+  {word:'mutual', phonetic:'/mju:tul/', meaning:'相互的；共同的', pos:'a'},
+  {word:'mystery', phonetic:'/mstri/', meaning:'神秘；谜', pos:'n'},
+  {word:'nail', phonetic:'/nel/', meaning:'指甲；钉子', pos:'n/v'},
+  {word:'narrow', phonetic:'/n�r/', meaning:'狭窄的；缩小', pos:'a'},
+  {word:'nationality', phonetic:'/n�n�lti/', meaning:'国籍', pos:'n'},
+  {word:'native', phonetic:'/netv/', meaning:'本地的；本地人', pos:'a'},
+  {word:'natural', phonetic:'/n�trl/', meaning:'自然的；天生的', pos:'a'},
+  {word:'naturally', phonetic:'/n�trli/', meaning:'自然地；天生地', pos:'a'},
+  {word:'navy', phonetic:'/nevi/', meaning:'海军', pos:'n/n/a/v'},
+  {word:'neat', phonetic:'/ni:t/', meaning:'整洁的；灵巧的', pos:'a'},
+  {word:'needle', phonetic:'/ni:dl/', meaning:'针；指针', pos:'n'},
+  {word:'neglect', phonetic:'/nglekt/', meaning:'忽视，疏忽', pos:'n/v'},
+  {word:'negotiate', phonetic:'/ngiet/', meaning:'谈判，协商', pos:'v'},
+  {word:'neutral', phonetic:'/nju:trl/', meaning:'中立的；空档', pos:'a'},
+  {word:'nevertheless', phonetic:'/nev�les/', meaning:'然而，不过', pos:'a'},
+  {word:'nightmare', phonetic:'/natme(r)/', meaning:'噩梦', pos:'n'},
+  {word:'noble', phonetic:'/nbl/', meaning:'高贵的；贵族', pos:'a'},
+  {word:'nonsense', phonetic:'/nnsns/', meaning:'胡说，废话', pos:'n'},
+  {word:'normally', phonetic:'/n:mli/', meaning:'正常地；通常', pos:'a'},
+  {word:'north', phonetic:'/n:/', meaning:'北方；北方的', pos:'n/a'},
+  {word:'northeast', phonetic:'/\'n:\'i:st/', meaning:'东北；东北的', pos:'n/a'},
+  {word:'northern', phonetic:'/n:�n/', meaning:'北方的', pos:'a'},
+  {word:'northwest', phonetic:'/\'n:\'west/', meaning:'西北；西北的', pos:'n/a'},
+  {word:'noticeable', phonetic:'/ntsbl/', meaning:'明显的，显著的', pos:'a'},
+  {word:'notion', phonetic:'/nn/', meaning:'概念，观念', pos:'n'},
+  {word:'nourish', phonetic:'/nr/', meaning:'滋养，养育', pos:'v'},
+  {word:'nuclear', phonetic:'/nju:kli(r)/', meaning:'核的；核能的', pos:'a'},
+  {word:'nuisance', phonetic:'/nju:sns/', meaning:'讨厌的人或事', pos:'n'},
+  {word:'numerous', phonetic:'/njumrs/', meaning:'众多的', pos:'a'},
+  {word:'nut', phonetic:'/nt/', meaning:'坚果；螺母', pos:'n'},
+  {word:'obese', phonetic:'/bi:s/', meaning:'肥胖的', pos:'a'},
+  {word:'obey', phonetic:'/be/', meaning:'服从，遵守', pos:'v'},
+  {word:'object', phonetic:'/bdkt/', meaning:'物体；目标；反对', pos:'n'},
+  {word:'oblige', phonetic:'/blad/', meaning:'迫使；施恩于', pos:'v'},
+  {word:'observe', phonetic:'/bz:v/', meaning:'观察；遵守；评论', pos:'v'},
+  {word:'obstacle', phonetic:'/bstkl/', meaning:'障碍', pos:'n'},
+  {word:'obtain', phonetic:'/bten/', meaning:'获得', pos:'v'},
+  {word:'obvious', phonetic:'/bvis/', meaning:'明显的', pos:'a'},
+  {word:'occasion', phonetic:'/ken/', meaning:'场合；时机', pos:'n'},
+  {word:'occasional', phonetic:'/kenl/', meaning:'偶尔的', pos:'a'},
+  {word:'occupation', phonetic:'/kjupen/', meaning:'职业；占领', pos:'n'},
+  {word:'occupy', phonetic:'/kjupa/', meaning:'占据；使忙碌', pos:'v'},
+  {word:'old-fashioned', phonetic:'/uldf�nd/', meaning:'老式的，过时的', pos:'a'},
+  {word:'olympic', phonetic:'/lmpk/', meaning:'奥林匹克的', pos:'a'},
+  {word:'omit', phonetic:'/mt/', meaning:'省略；遗漏', pos:'v'},
+  {word:'operate', phonetic:'/pret/', meaning:'操作；运转；手术', pos:'v/v'},
+  {word:'operation', phonetic:'/pren/', meaning:'操作；手术；运营', pos:'n'},
+  {word:'operational', phonetic:'/prenl/', meaning:'操作的；运营的', pos:'a'},
+  {word:'operator', phonetic:'/pret(r)/', meaning:'操作员', pos:'n'},
+  {word:'opponent', phonetic:'/pnnt/', meaning:'对手，反对者', pos:'n'},
+  {word:'oppose', phonetic:'/pz/', meaning:'反对，抵制', pos:'v'},
+  {word:'opposite', phonetic:'/pzt/', meaning:'相反的；对面', pos:'a'},
+  {word:'optimism', phonetic:'/ptmzm/', meaning:'乐观，乐观主义', pos:'n'},
+  {word:'optional', phonetic:'/pnl/', meaning:'可选的', pos:'a'},
+  {word:'oral', phonetic:'/:rl/', meaning:'口头的；口试', pos:'a'},
+  {word:'orbit', phonetic:'/:bt/', meaning:'轨道；环绕', pos:'v'},
+  {word:'ordinary', phonetic:'/:dnri/', meaning:'普通的', pos:'a'},
+  {word:'organ', phonetic:'/:gn/', meaning:'器官；机构；风琴', pos:'n'},
+  {word:'organic', phonetic:'/:g�nk/', meaning:'有机的；器官的', pos:'a'},
+  {word:'organism', phonetic:'/:gnzm/', meaning:'生物，有机体', pos:'n'},
+  {word:'orient', phonetic:'/:rient/', meaning:'东方；使适应', pos:'v'},
+  {word:'oriental', phonetic:'/:rientl/', meaning:'东方的', pos:'a'},
+  {word:'origin', phonetic:'/rdn/', meaning:'起源，来源', pos:'n'},
+  {word:'original', phonetic:'/rdnl/', meaning:'最初的；原创的；原件', pos:'a'},
+  {word:'otherwise', phonetic:'/�waz/', meaning:'否则；在其他方面', pos:'a'},
+  {word:'ought', phonetic:'/:t/', meaning:'应该', pos:'a'},
+  {word:'ounce', phonetic:'/ans/', meaning:'盎司（重量单位）', pos:'n'},
+  {word:'outer', phonetic:'/at(r)/', meaning:'外部的', pos:'a'},
+  {word:'oval', phonetic:'/vl/', meaning:'椭圆形的；椭圆形', pos:'a'},
+  {word:'oven', phonetic:'/vn/', meaning:'烤箱', pos:'n'},
+  {word:'overcome', phonetic:'/vkm/', meaning:'克服，战胜', pos:'v'},
+  {word:'overlook', phonetic:'/vlk/', meaning:'俯瞰；忽视', pos:'v'},
+  {word:'ozone', phonetic:'/zn/', meaning:'臭氧', pos:'n'},
+  {word:'pack', phonetic:'/p�k/', meaning:'包裹；包装；一群', pos:'v'},
+  {word:'packet', phonetic:'/p�kt/', meaning:'小包，包裹', pos:'n'},
+  {word:'pad', phonetic:'/p�d/', meaning:'垫子；便签本', pos:'n/v'},
+  {word:'pale', phonetic:'/pel/', meaning:'苍白的', pos:'a'},
+  {word:'pan', phonetic:'/p�n/', meaning:'平底锅', pos:'n'},
+  {word:'panel', phonetic:'/p�nl/', meaning:'面板；专家小组', pos:'n'},
+  {word:'parade', phonetic:'/pred/', meaning:'游行；展示', pos:'n/v'},
+  {word:'parallel', phonetic:'/p�rlel/', meaning:'平行的；类似；平行线', pos:'a'},
+  {word:'parcel', phonetic:'/p:sl/', meaning:'包裹', pos:'n'},
+  {word:'parliament', phonetic:'/p:lmnt/', meaning:'议会，国会', pos:'n'},
+  {word:'partial', phonetic:'/p:l/', meaning:'部分的；偏袒的', pos:'a'},
+  {word:'particle', phonetic:'/p:tkl/', meaning:'粒子；微粒', pos:'n'},
+  {word:'particular', phonetic:'/ptkjl(r)/', meaning:'特别的；挑剔的', pos:'a'},
+  {word:'particularly', phonetic:'/ptkjlli/', meaning:'特别地，尤其', pos:'a'},
+  {word:'party', phonetic:'/p:ti/', meaning:'政党；聚会；一方', pos:'n'},
+  {word:'passion', phonetic:'/p�n/', meaning:'激情，热情', pos:'n'},
+  {word:'passionate', phonetic:'/p�nt/', meaning:'充满激情的', pos:'a'},
+  {word:'passive', phonetic:'/p�sv/', meaning:'被动的；消极的', pos:'a'},
+  {word:'paste', phonetic:'/paste/', meaning:'粘贴；浆糊', pos:'n/v'},
+  {word:'patch', phonetic:'/p�t/', meaning:'补丁；修补；小块土地', pos:'n/v'},
+  {word:'patent', phonetic:'/p�tnt/', meaning:'专利；专利的', pos:'n/a'},
+  {word:'path', phonetic:'/p:/', meaning:'路径；道路', pos:'n'},
+  {word:'pattern', phonetic:'/p�tn/', meaning:'模式；图案；样式', pos:'n'},
+  {word:'paw', phonetic:'/p:/', meaning:'爪子', pos:'n/v'},
+  {word:'pea', phonetic:'/pi:/', meaning:'豌豆', pos:'n'},
+  {word:'peach', phonetic:'/pi:t/', meaning:'桃子', pos:'n/a'},
+  {word:'pearl', phonetic:'/p:l/', meaning:'珍珠', pos:'n'},
+  {word:'peasant', phonetic:'/peznt/', meaning:'农民', pos:'n'},
+  {word:'peculiar', phonetic:'/pkju:li(r)/', meaning:'独特的；奇怪的', pos:'a'},
+  {word:'peer', phonetic:'/p(r)/', meaning:'同龄人；同辈；凝视', pos:'n/v'},
+  {word:'penalty', phonetic:'/penlti/', meaning:'惩罚，处罚', pos:'n'},
+  {word:'penetrate', phonetic:'/pentret/', meaning:'穿透；渗透；看穿', pos:'v'},
+  {word:'penny', phonetic:'/peni/', meaning:'便士（货币单位）', pos:'n'},
+  {word:'pension', phonetic:'/penn/', meaning:'养老金，退休金', pos:'n/v'},
+  {word:'perceive', phonetic:'/psi:v/', meaning:'感知，察觉', pos:'v'},
+  {word:'percent', phonetic:'/p\'sent/', meaning:'百分比', pos:'n'},
+  {word:'peril', phonetic:'/perl/', meaning:'危险', pos:'n'},
+  {word:'period', phonetic:'/prid/', meaning:'时期；句号', pos:'n'},
+  {word:'permanent', phonetic:'/p:mnnt/', meaning:'永久的', pos:'a'},
+  {word:'perseverance', phonetic:'/p:svrns/', meaning:'毅力，坚持', pos:'n'},
+  {word:'persevere', phonetic:'/p:sv(r)/', meaning:'坚持不懈', pos:'v'},
+  {word:'persist', phonetic:'/psst/', meaning:'坚持；持续', pos:'v'},
+  {word:'perspective', phonetic:'/pspektv/', meaning:'视角；观点；透视', pos:'n'},
+  {word:'persuade', phonetic:'/pswed/', meaning:'说服，劝服', pos:'v'},
+  {word:'pessimistic', phonetic:'/pesmstk/', meaning:'悲观的', pos:'a'},
+  {word:'petrol', phonetic:'/petrl/', meaning:'汽油', pos:'n'},
+  {word:'phase', phonetic:'/fez/', meaning:'阶段；相位', pos:'n'},
+  {word:'philosopher', phonetic:'/flsf(r)/', meaning:'哲学家', pos:'n'},
+  {word:'phrase', phonetic:'/frez/', meaning:'短语，词组', pos:'n'},
+  {word:'physicist', phonetic:'/fzsst/', meaning:'物理学家', pos:'n'},
+  {word:'physics', phonetic:'/fzks/', meaning:'物理学', pos:'n'},
+  {word:'pierce', phonetic:'/ps/', meaning:'刺穿，穿透', pos:'v'},
+  {word:'pile', phonetic:'/pal/', meaning:'堆；堆积', pos:'n/v'},
+  {word:'pillar', phonetic:'/pl(r)/', meaning:'柱子；支柱', pos:'n'},
+  {word:'pilot', phonetic:'/palt/', meaning:'飞行员；试验性的；引导', pos:'n/v'},
+  {word:'pine', phonetic:'/pan/', meaning:'松树；渴望', pos:'n/v'},
+  {word:'pioneer', phonetic:'/pan(r)/', meaning:'先驱；开拓者', pos:'n'},
+  {word:'pipe', phonetic:'/pap/', meaning:'管子；烟斗', pos:'n'},
+  {word:'pirate', phonetic:'/part/', meaning:'海盗；盗版', pos:'n/v'},
+  {word:'pitch', phonetic:'/pt/', meaning:'音高；投掷；推销', pos:'n/v'},
+  {word:'pity', phonetic:'/pti/', meaning:'遗憾；同情', pos:'n/v'},
+  {word:'plain', phonetic:'/plen/', meaning:'平原；简单的；朴素的', pos:'a'},
+  {word:'plantation', phonetic:'/pl:nten/', meaning:'种植园', pos:'n'},
+  {word:'platform', phonetic:'/pl�tf:m/', meaning:'平台；站台', pos:'n'},
+  {word:'pleasant', phonetic:'/pleznt/', meaning:'愉快的，令人高兴的', pos:'a'},
+  {word:'pleasure', phonetic:'/ple(r)/', meaning:'快乐，愉快', pos:'n'},
+  {word:'pledge', phonetic:'/pled/', meaning:'保证；誓言', pos:'v/n'},
+  {word:'plentiful', phonetic:'/\'plentfl/', meaning:'丰富的，充足的', pos:'a'},
+  {word:'plough', phonetic:'/pla/', meaning:'犁；耕地', pos:'n/v'},
+  {word:'plunge', phonetic:'/plnd/', meaning:'猛冲；跳水；暴跌', pos:'v/n'},
+  {word:'poem', phonetic:'/pm/', meaning:'诗', pos:'n'},
+  {word:'poet', phonetic:'/pt/', meaning:'诗人', pos:'n'},
+  {word:'poetry', phonetic:'/ptri/', meaning:'诗歌', pos:'n'},
+  {word:'poison', phonetic:'/pzn/', meaning:'毒药；毒害', pos:'n'},
+  {word:'poisonous', phonetic:'/pzns/', meaning:'有毒的', pos:'a'},
+  {word:'political', phonetic:'/pltkl/', meaning:'政治的', pos:'a'},
+  {word:'poll', phonetic:'/pl/', meaning:'民意调查；投票', pos:'n/v'},
+  {word:'pork', phonetic:'/p:k/', meaning:'猪肉', pos:'n'},
+  {word:'port', phonetic:'/p:t/', meaning:'港口；端口', pos:'n'},
+  {word:'portable', phonetic:'/p:tbl/', meaning:'便携的', pos:'a'},
+  {word:'portion', phonetic:'/p:n/', meaning:'部分；一份', pos:'n'},
+  {word:'portrait', phonetic:'/p:tret/', meaning:'肖像；描述', pos:'n'},
+  {word:'possess', phonetic:'/pzes/', meaning:'拥有，具有', pos:'v'},
+  {word:'possession', phonetic:'/pzen/', meaning:'拥有；财产', pos:'n'},
+  {word:'postpone', phonetic:'/pspn/', meaning:'推迟，延期', pos:'v'},
+  {word:'pot', phonetic:'/pt/', meaning:'锅，壶', pos:'n'},
+  {word:'ppearance', phonetic:'/prns/', meaning:'外貌；出现', pos:'n'},
+  {word:'pplication', phonetic:'/�pl\'ke()n/', meaning:'申请；应用', pos:'n/a'},
+  {word:'practically', phonetic:'/pr�ktkli/', meaning:'几乎；实际上', pos:'a'},
+  {word:'pray', phonetic:'/pre/', meaning:'祈祷', pos:'v'},
+  {word:'precaution', phonetic:'/prk:n/', meaning:'预防措施', pos:'n'},
+  {word:'precise', phonetic:'/prsas/', meaning:'精确的，准确的', pos:'a'},
+  {word:'predict', phonetic:'/prdkt/', meaning:'预测', pos:'v'},
+  {word:'preferable', phonetic:'/prefrbl/', meaning:'更可取的', pos:'a'},
+  {word:'preference', phonetic:'/prefrns/', meaning:'偏好；优先', pos:'n'},
+  {word:'prejudice', phonetic:'/preduds/', meaning:'偏见', pos:'n'},
+  {word:'preliminary', phonetic:'/prlmnri/', meaning:'初步的；预备的', pos:'a'},
+  {word:'premier', phonetic:'/premi(r)/', meaning:'总理；首要的', pos:'n/a'},
+  {word:'prescribe', phonetic:'/prskrab/', meaning:'开药方；规定', pos:'v'},
+  {word:'presently', phonetic:'/prezntli/', meaning:'目前；不久', pos:'a'},
+  {word:'preserve', phonetic:'/prz:v/', meaning:'保存；保护', pos:'v'},
+  {word:'pretend', phonetic:'/pr\'tend/', meaning:'假装', pos:'v'},
+  {word:'prevail', phonetic:'/prvel/', meaning:'盛行；占优势', pos:'v'},
+  {word:'prevent', phonetic:'/pr\'vent/', meaning:'防止，阻止', pos:'v'},
+  {word:'priest', phonetic:'/pri:st/', meaning:'牧师，神父', pos:'n'},
+  {word:'principal', phonetic:'/p\'rnspl/', meaning:'主要的；校长；本金', pos:'a/n'},
+  {word:'principle', phonetic:'/prnspl/', meaning:'原则，原理', pos:'n'},
+  {word:'prior', phonetic:'/pra(r)/', meaning:'之前的；优先的', pos:'a'},
+  {word:'priority', phonetic:'/prarti/', meaning:'优先；优先级', pos:'n'},
+  {word:'prison', phonetic:'/przn/', meaning:'监狱', pos:'n'},
+  {word:'prisoner', phonetic:'/przn(r)/', meaning:'囚犯', pos:'n'},
+  {word:'privilege', phonetic:'/prvld/', meaning:'特权；荣幸', pos:'n'},
+  {word:'procedure', phonetic:'/prsi:d(r)/', meaning:'程序，步骤', pos:'n'},
+  {word:'proceed', phonetic:'/prsi:d/', meaning:'继续；进行', pos:'v'},
+  {word:'procession', phonetic:'/prsen/', meaning:'队伍，行列', pos:'n'},
+  {word:'proclaim', phonetic:'/prklem/', meaning:'宣布，声明', pos:'v'},
+  {word:'prohibit', phonetic:'/prhbt/', meaning:'禁止', pos:'v'},
+  {word:'prominent', phonetic:'/prmnnt/', meaning:'突出的；著名的', pos:'a'},
+  {word:'prompt', phonetic:'/prmpt/', meaning:'迅速的；提示；促使', pos:'a/v'},
+  {word:'proof', phonetic:'/pru:f/', meaning:'证据；防...的', pos:'n/a'},
+  {word:'proper', phonetic:'/prp(r)/', meaning:'适当的；正确的', pos:'a'},
+  {word:'property', phonetic:'/prpti/', meaning:'财产；特性', pos:'n'},
+  {word:'proportional', phonetic:'/prp:nl/', meaning:'比例的；成比例的', pos:'a'},
+  {word:'propose', phonetic:'/prpz/', meaning:'提议；求婚', pos:'v'},
+  {word:'prospect', phonetic:'/prspekt/', meaning:'前景；可能性', pos:'n'},
+  {word:'prosperity', phonetic:'/prsperti/', meaning:'繁荣', pos:'n'},
+  {word:'prosperous', phonetic:'/prsprs/', meaning:'繁荣的', pos:'a'},
+  {word:'protest', phonetic:'/prtest/', meaning:'抗议；反对', pos:'v/n'},
+  {word:'provided', phonetic:'/prvadd/', meaning:'假如，如果', pos:'conj'},
+  {word:'provision', phonetic:'/prvn/', meaning:'供应；规定；准备', pos:'n'},
+  {word:'provoke', phonetic:'/prvk/', meaning:'激怒；引起', pos:'v'},
+  {word:'psychological', phonetic:'/sakldkl/', meaning:'心理的', pos:'a'},
+  {word:'psychology', phonetic:'/sakldi/', meaning:'心理学', pos:'n'},
+  {word:'pump', phonetic:'/pmp/', meaning:'泵；抽水', pos:'n/v'},
+  {word:'punctual', phonetic:'/pktul/', meaning:'准时的', pos:'a'},
+  {word:'pupil', phonetic:'/pju:pl/', meaning:'学生；瞳孔', pos:'n'},
+  {word:'purchase', phonetic:'/p:ts/', meaning:'购买', pos:'v'},
+  {word:'pure', phonetic:'/pj(r)/', meaning:'纯的；纯洁的', pos:'a'},
+  {word:'pursue', phonetic:'/psju:/', meaning:'追求；追赶', pos:'v'},
+  {word:'pursuit', phonetic:'/psju:t/', meaning:'追求；追赶', pos:'n'},
+  {word:'puzzle', phonetic:'/pzl/', meaning:'谜；困惑', pos:'n/v'},
+  {word:'quality', phonetic:'/kwlti/', meaning:'质量；品质', pos:'n'},
+  {word:'quantity', phonetic:'/kwntti/', meaning:'数量', pos:'n'},
+  {word:'quarrel', phonetic:'/kwrl/', meaning:'吵架，争吵', pos:'n'},
+  {word:'quarter', phonetic:'/kw:t(r)/', meaning:'四分之一；季度；地区', pos:'n'},
+  {word:'queue', phonetic:'/kju:/', meaning:'排队；队列', pos:'n/v'},
+  {word:'quotation', phonetic:'/kwten/', meaning:'引文；报价', pos:'n'},
+  {word:'racial', phonetic:'/rel/', meaning:'种族的', pos:'a'},
+  {word:'radical', phonetic:'/r�dkl/', meaning:'彻底的；激进的；根本的', pos:'a/n'},
+  {word:'rag', phonetic:'/r�g/', meaning:'破布；碎布', pos:'n'},
+  {word:'railroad', phonetic:'/relrd/', meaning:'铁路', pos:'n/v'},
+  {word:'rat', phonetic:'/r�t/', meaning:'老鼠', pos:'n'},
+  {word:'ratio', phonetic:'/rei/', meaning:'比率，比例', pos:'n'},
+  {word:'rational', phonetic:'/r�nl/', meaning:'理性的，合理的', pos:'a'},
+  {word:'raw', phonetic:'/r:/', meaning:'生的；未加工的', pos:'a'},
+  {word:'realistic', phonetic:'/ri:lstk/', meaning:'现实的；现实主义的', pos:'a'},
+  {word:'realm', phonetic:'/relm/', meaning:'领域；王国', pos:'n'},
+  {word:'rear', phonetic:'/r(r)/', meaning:'后面；后面的；抚养', pos:'n/a/v'},
+  {word:'rebel', phonetic:'/rbel/', meaning:'反叛；反叛者', pos:'v'},
+  {word:'reception', phonetic:'/rsepn/', meaning:'接待；接收；招待会', pos:'n'},
+  {word:'reckon', phonetic:'/rekn/', meaning:'认为；估计', pos:'v'},
+  {word:'recognition', phonetic:'/rekgnn/', meaning:'识别；认可', pos:'n'},
+  {word:'recognize', phonetic:'/rekgnaz/', meaning:'认出；承认', pos:'v'},
+  {word:'recommend', phonetic:'/rekmend/', meaning:'推荐；建议', pos:'v'},
+  {word:'recreation', phonetic:'/ri:krien/', meaning:'娱乐，消遣', pos:'n'},
+  {word:'recruit', phonetic:'/rkru:t/', meaning:'招募；新成员', pos:'v'},
+  {word:'refer', phonetic:'/rf:(r)/', meaning:'参考；提到；涉及', pos:'v'},
+  {word:'refine', phonetic:'/rfan/', meaning:'提炼；改进', pos:'v'},
+  {word:'refined', phonetic:'/rfand/', meaning:'精炼的；文雅的', pos:'a'},
+  {word:'reform', phonetic:'/rf:m/', meaning:'改革，革新', pos:'v'},
+  {word:'refrain', phonetic:'/rfren/', meaning:'克制；副歌', pos:'v'},
+  {word:'refresh', phonetic:'/rfre/', meaning:'刷新；使恢复', pos:'v'},
+  {word:'refrigerator', phonetic:'/rfrdret(r)/', meaning:'冰箱', pos:'n'},
+  {word:'regarding', phonetic:'/rg:d/', meaning:'关于', pos:'prep'},
+  {word:'region', phonetic:'/ri:dn/', meaning:'地区', pos:'n'},
+  {word:'register', phonetic:'/redst(r)/', meaning:'登记，注册', pos:'v/n'},
+  {word:'regret', phonetic:'/rgret/', meaning:'后悔，遗憾', pos:'v'},
+  {word:'regular', phonetic:'/regjl(r)/', meaning:'定期的；正常的', pos:'a'},
+  {word:'regulate', phonetic:'/regjulet/', meaning:'调节；管理', pos:'v'},
+  {word:'reinforce', phonetic:'/ri:nf:s/', meaning:'加强，增强', pos:'v'},
+  {word:'reject', phonetic:'/rdekt/', meaning:'拒绝；驳回', pos:'v'},
+  {word:'relation', phonetic:'/rlen/', meaning:'关系；亲属', pos:'n'},
+  {word:'relativity', phonetic:'/reltvti/', meaning:'相对论；相对性', pos:'n'},
+  {word:'relevant', phonetic:'/relvnt/', meaning:'相关的', pos:'a'},
+  {word:'reliability', phonetic:'/rla\'blt/', meaning:'可靠性', pos:'n'},
+  {word:'reliable', phonetic:'/rlabl/', meaning:'可靠的', pos:'a'},
+  {word:'religious', phonetic:'/rlds/', meaning:'宗教的', pos:'a'},
+  {word:'reluctant', phonetic:'/rlktnt/', meaning:'不情愿的，勉强的', pos:'a'},
+  {word:'remark', phonetic:'/rm:k/', meaning:'评论；注意到', pos:'v/n'},
+  {word:'remarkable', phonetic:'/rm:kbl/', meaning:'显著的，引人注目的', pos:'a'},
+  {word:'remedy', phonetic:'/remdi/', meaning:'补救；治疗；药物', pos:'n/v'},
+  {word:'remote', phonetic:'/rmt/', meaning:'遥远的；遥控的', pos:'a'},
+  {word:'remove', phonetic:'/rmu:v/', meaning:'移除，删除', pos:'v'},
+  {word:'render', phonetic:'/rend(r)/', meaning:'使成为；提供；渲染', pos:'v'},
+  {word:'renovate', phonetic:'/renvet/', meaning:'翻新，装修', pos:'v'},
+  {word:'rent', phonetic:'/rent/', meaning:'租金；出租', pos:'v/n'},
+  {word:'represent', phonetic:'/repr\'zent/', meaning:'代表；表现', pos:'v'},
+  {word:'representative', phonetic:'/repr\'zentatv/', meaning:'代表；代表性的', pos:'a/n'},
+  {word:'reproduce', phonetic:'/ri:prdju:s/', meaning:'复制；繁殖', pos:'v/v'},
+  {word:'republic', phonetic:'/rpblk/', meaning:'共和国', pos:'n'},
+  {word:'reputation', phonetic:'/repjuten/', meaning:'名声，声誉', pos:'n'},
+  {word:'rescue', phonetic:'/reskju:/', meaning:'救援，营救', pos:'v'},
+  {word:'resemble', phonetic:'/rzembl/', meaning:'类似，像', pos:'v'},
+  {word:'resent', phonetic:'/resent/', meaning:'怨恨，憎恨', pos:'v'},
+  {word:'reserve', phonetic:'/rz:v/', meaning:'预订；保留；储备', pos:'v'},
+  {word:'reside', phonetic:'/rzad/', meaning:'居住', pos:'v'},
+  {word:'residence', phonetic:'/rezdns/', meaning:'住宅，居住', pos:'n'},
+  {word:'resident', phonetic:'/rezdnt/', meaning:'居民；常驻的', pos:'n/a'},
+  {word:'resign', phonetic:'/rzan/', meaning:'辞职', pos:'v'},
+  {word:'resist', phonetic:'/rzst/', meaning:'抵抗；抵制', pos:'v'},
+  {word:'resistance', phonetic:'/rzstns/', meaning:'抵抗；阻力', pos:'n'},
+  {word:'resistant', phonetic:'/rzstnt/', meaning:'抵抗的；耐...的', pos:'a'},
+  {word:'resolution', phonetic:'/rezlu:n/', meaning:'决心；决议；分辨率', pos:'n'},
+  {word:'resolve', phonetic:'/rzlv/', meaning:'解决；决心', pos:'v'},
+  {word:'resort', phonetic:'/rz:t/', meaning:'度假地；求助；手段', pos:'v'},
+  {word:'respective', phonetic:'/rspektv/', meaning:'各自的', pos:'a'},
+  {word:'restless', phonetic:'/restls/', meaning:'不安的，焦躁的', pos:'a'},
+  {word:'restore', phonetic:'/rst:(r)/', meaning:'恢复；修复', pos:'v'},
+  {word:'restrain', phonetic:'/rstren/', meaning:'抑制，限制', pos:'v'},
+  {word:'restrict', phonetic:'/rstrkt/', meaning:'限制，约束', pos:'v'},
+  {word:'resume', phonetic:'/r\'zju:m/', meaning:'恢复；重新开始；简历', pos:'v'},
+  {word:'retail', phonetic:'/ri:tel/', meaning:'零售', pos:'n/v'},
+  {word:'retain', phonetic:'/rten/', meaning:'保持，保留', pos:'v'},
+  {word:'retreat', phonetic:'/rtri:t/', meaning:'撤退；退避', pos:'v'},
+  {word:'reveal', phonetic:'/rvi:l/', meaning:'揭示，透露', pos:'v'},
+  {word:'revenue', phonetic:'/revnju:/', meaning:'收入，税收', pos:'n'},
+  {word:'reverse', phonetic:'/rv:s/', meaning:'相反的；逆转；倒车', pos:'v/a'},
+  {word:'revise', phonetic:'/rvaz/', meaning:'修订，修改', pos:'v'},
+  {word:'revolt', phonetic:'/rvlt/', meaning:'反抗，起义', pos:'v/n'},
+  {word:'revolution', phonetic:'/revlu:n/', meaning:'革命', pos:'n'},
+  {word:'revolutionary', phonetic:'/revlu:nri/', meaning:'革命的；革命者', pos:'a'},
+  {word:'rhythm', phonetic:'/r�m/', meaning:'节奏，韵律', pos:'n'},
+  {word:'ridge', phonetic:'/rd/', meaning:'山脊；脊状', pos:'n'},
+  {word:'ridiculous', phonetic:'/rdkjls/', meaning:'荒谬的，可笑的', pos:'a'},
+  {word:'rigid', phonetic:'/rdd/', meaning:'严格的；僵硬的', pos:'a'},
+  {word:'ripe', phonetic:'/rap/', meaning:'成熟的', pos:'a'},
+  {word:'rival', phonetic:'/ravl/', meaning:'对手；竞争的', pos:'n/v'},
+  {word:'romantic', phonetic:'/rm�ntk/', meaning:'浪漫的', pos:'a'},
+  {word:'roof', phonetic:'/ru:f/', meaning:'屋顶', pos:'n'},
+  {word:'root', phonetic:'/ru:t/', meaning:'根；根源', pos:'n/v'},
+  {word:'rope', phonetic:'/rp/', meaning:'绳子', pos:'n/v'},
+  {word:'rotate', phonetic:'/rtet/', meaning:'旋转；轮换', pos:'v'},
+  {word:'rough', phonetic:'/rf/', meaning:'粗糙的；大概的；艰难的', pos:'a'},
+  {word:'rouse', phonetic:'/raz/', meaning:'唤醒；激起', pos:'v'},
+  {word:'route', phonetic:'/ru:t/', meaning:'路线，路径', pos:'n'},
+  {word:'routine', phonetic:'/ru:ti:n/', meaning:'常规；例行的', pos:'n/a'},
+  {word:'row', phonetic:'/r/', meaning:'行，排；划船', pos:'n/v'},
+  {word:'royal', phonetic:'/rl/', meaning:'皇家的；王室的', pos:'a'},
+  {word:'rural', phonetic:'/rrl/', meaning:'农村的', pos:'a'},
+  {word:'sacrifice', phonetic:'/s�krfas/', meaning:'牺牲；祭品', pos:'v'},
+  {word:'sail', phonetic:'/sel/', meaning:'航行；帆', pos:'n/v'},
+  {word:'saw', phonetic:'/s:/', meaning:'锯子；锯；看见（过去式）', pos:'n'},
+  {word:'scarce', phonetic:'/skes/', meaning:'稀缺的', pos:'a'},
+  {word:'scatter', phonetic:'/sk�t(r)/', meaning:'分散，散开', pos:'v'},
+  {word:'scene', phonetic:'/si:n/', meaning:'场景；景色；现场', pos:'n'},
+  {word:'scenery', phonetic:'/si:nri/', meaning:'风景，景色', pos:'n'},
+  {word:'scent', phonetic:'/sent/', meaning:'气味；香味', pos:'n/v'},
+  {word:'scheme', phonetic:'/ski:m/', meaning:'计划；方案；阴谋', pos:'n/v'},
+  {word:'scholar', phonetic:'/skl(r)/', meaning:'学者', pos:'n'},
+  {word:'scold', phonetic:'/skld/', meaning:'责骂，训斥', pos:'v'},
+  {word:'scratch', phonetic:'/skr�t/', meaning:'抓；划痕；从头开始', pos:'v/n'},
+  {word:'scream', phonetic:'/skri:m/', meaning:'尖叫', pos:'v'},
+  {word:'seal', phonetic:'/si:l/', meaning:'封条；印章；海豹；密封', pos:'n/v'},
+  {word:'secretary', phonetic:'/sekrtri/', meaning:'秘书；部长', pos:'n'},
+  {word:'section', phonetic:'/sekn/', meaning:'部分；部门；截面', pos:'n'},
+  {word:'seed', phonetic:'/si:d/', meaning:'种子', pos:'n'},
+  {word:'seek', phonetic:'/si:k/', meaning:'寻求；试图', pos:'v'},
+  {word:'segment', phonetic:'/\'segmant/', meaning:'部分；片段；分割', pos:'n'},
+  {word:'seize', phonetic:'/si:z/', meaning:'抓住；夺取', pos:'v'},
+  {word:'sensible', phonetic:'/sensbl/', meaning:'明智的；可感知的', pos:'a'},
+  {word:'sensitive', phonetic:'/senstv/', meaning:'敏感的；灵敏的', pos:'a'},
+  {word:'separate', phonetic:'/sepret/', meaning:'分开；分开的', pos:'a/v'},
+  {word:'sequence', phonetic:'/si:kwns/', meaning:'顺序，序列', pos:'n'},
+  {word:'servant', phonetic:'/s:vnt/', meaning:'仆人；公务员', pos:'n'},
+  {word:'settle', phonetic:'/setl/', meaning:'解决；定居；安顿', pos:'v'},
+  {word:'settlement', phonetic:'/setlmnt/', meaning:'解决；定居点；结算', pos:'n'},
+  {word:'severe', phonetic:'/sv(r)/', meaning:'严重的；严厉的', pos:'a'},
+  {word:'sew', phonetic:'/s/', meaning:'缝，缝制', pos:'v'},
+  {word:'shade', phonetic:'/ed/', meaning:'阴影；遮光', pos:'n/v'},
+  {word:'shallow', phonetic:'/�l/', meaning:'浅的；浅薄的', pos:'a'},
+  {word:'sheet', phonetic:'/i:t/', meaning:'床单；纸张；薄片', pos:'n'},
+  {word:'shelf', phonetic:'/elf/', meaning:'架子', pos:'n'},
+  {word:'shelter', phonetic:'/elt(r)/', meaning:'庇护所；遮蔽；保护', pos:'n/v'},
+  {word:'shift', phonetic:'/ft/', meaning:'转移；改变；轮班', pos:'v/n'},
+  {word:'shiver', phonetic:'/v(r)/', meaning:'发抖，颤抖', pos:'v/n'},
+  {word:'shore', phonetic:'/:(r)/', meaning:'海岸，岸边', pos:'n'},
+  {word:'shortage', phonetic:'/:td/', meaning:'短缺，不足', pos:'n'},
+  {word:'shrink', phonetic:'/rk/', meaning:'缩水；退缩', pos:'v/v'},
+  {word:'sight', phonetic:'/sat/', meaning:'视力；景象；看见', pos:'n'},
+  {word:'sightseeing', phonetic:'/satsi:/', meaning:'观光', pos:'n'},
+  {word:'significance', phonetic:'/sgnfkns/', meaning:'重要性；意义', pos:'n'},
+  {word:'silver', phonetic:'/slv(r)/', meaning:'银；银色的', pos:'n/a'},
+  {word:'sincere', phonetic:'/sns(r)/', meaning:'真诚的', pos:'a'},
+  {word:'sincerely', phonetic:'/snsli/', meaning:'真诚地', pos:'a'},
+  {word:'sink', phonetic:'/sk/', meaning:'下沉；水槽', pos:'v/n'},
+  {word:'situation', phonetic:'/stuen/', meaning:'情况；位置', pos:'n'},
+  {word:'sketch', phonetic:'/sket/', meaning:'素描；概述', pos:'v/n'},
+  {word:'ski', phonetic:'/ski:/', meaning:'滑雪', pos:'v'},
+  {word:'skillful', phonetic:'/\'sklfl/', meaning:'熟练的', pos:'a'},
+  {word:'slave', phonetic:'/slev/', meaning:'奴隶；苦干', pos:'n/v'},
+  {word:'slender', phonetic:'/slend(r)/', meaning:'苗条的；纤细的', pos:'a'},
+  {word:'slide', phonetic:'/slad/', meaning:'滑动；幻灯片', pos:'v/n'},
+  {word:'slip', phonetic:'/slp/', meaning:'滑倒；失误；纸条', pos:'v'},
+  {word:'slippery', phonetic:'/slpri/', meaning:'滑的；狡猾的', pos:'a'},
+  {word:'soak', phonetic:'/sk/', meaning:'浸泡', pos:'v'},
+  {word:'soil', phonetic:'/sl/', meaning:'土壤；弄脏', pos:'n'},
+  {word:'soldier', phonetic:'/sld(r)/', meaning:'士兵', pos:'n'},
+  {word:'solemn', phonetic:'/slm/', meaning:'庄严的，严肃的', pos:'a'},
+  {word:'solid', phonetic:'/sld/', meaning:'固体的；坚固的；可靠的', pos:'a'},
+  {word:'somehow', phonetic:'/smha/', meaning:'以某种方式；不知怎么地', pos:'a'},
+  {word:'sophisticated', phonetic:'/sfstketd/', meaning:'精密的；老练的；复杂的', pos:'a'},
+  {word:'sorrow', phonetic:'/sr/', meaning:'悲伤，悲痛', pos:'n'},
+  {word:'sorrowful', phonetic:'/srfl/', meaning:'悲伤的', pos:'a'},
+  {word:'sort', phonetic:'/s:t/', meaning:'种类；分类', pos:'n/v'},
+  {word:'south', phonetic:'/sa/', meaning:'南方；南方的', pos:'n/a'},
+  {word:'southeast', phonetic:'/sa\'i:st/', meaning:'东南；东南的', pos:'n/a'},
+  {word:'southern', phonetic:'/s�n/', meaning:'南方的', pos:'a'},
+  {word:'southwest', phonetic:'/sa\'west/', meaning:'西南；西南的', pos:'n/a'},
+  {word:'spacious', phonetic:'/spes/', meaning:'宽敞的', pos:'a'},
+  {word:'sparkle', phonetic:'/sp:kl/', meaning:'闪耀；闪光', pos:'n/v'},
+  {word:'specialize', phonetic:'/spelaiz/', meaning:'专门从事；专攻', pos:'v'},
+  {word:'species', phonetic:'/spi:i:z/', meaning:'物种', pos:'n'},
+  {word:'specific', phonetic:'/spsfk/', meaning:'具体的；特定的', pos:'a'},
+  {word:'specify', phonetic:'/spesfa/', meaning:'指定，明确说明', pos:'v'},
+  {word:'speculate', phonetic:'/spekjulet/', meaning:'推测；投机', pos:'v/v'},
+  {word:'spill', phonetic:'/spl/', meaning:'洒出，溢出', pos:'v'},
+  {word:'spirit', phonetic:'/sprt/', meaning:'精神；灵魂；烈酒', pos:'n'},
+  {word:'splendid', phonetic:'/splendd/', meaning:'极好的；壮丽的', pos:'a'},
+  {word:'split', phonetic:'/splt/', meaning:'分开；分裂', pos:'v'},
+  {word:'spoil', phonetic:'/spl/', meaning:'宠坏；破坏', pos:'v'},
+  {word:'sponsor', phonetic:'/spns(r)/', meaning:'赞助者；主办', pos:'n/v'},
+  {word:'spoon', phonetic:'/spu:n/', meaning:'勺子', pos:'n'},
+  {word:'spur', phonetic:'/sp: (r)/', meaning:'刺激；马刺', pos:'n/v'},
+  {word:'square', phonetic:'/skwe(r)/', meaning:'正方形；广场；平方', pos:'n/a'},
+  {word:'squeeze', phonetic:'/skwi:z/', meaning:'挤压；紧缩', pos:'v'},
+  {word:'stability', phonetic:'/stblti/', meaning:'稳定性', pos:'n'},
+  {word:'stable', phonetic:'/stebl/', meaning:'稳定的；马厩', pos:'a'},
+  {word:'stadium', phonetic:'/stedim/', meaning:'体育场', pos:'n'},
+  {word:'stair', phonetic:'/ste(r)/', meaning:'楼梯', pos:'n'},
+  {word:'startle', phonetic:'/st:tl/', meaning:'使吃惊', pos:'v'},
+  {word:'static', phonetic:'/st�tk/', meaning:'静态的；静电', pos:'a/n'},
+  {word:'statistic', phonetic:'/sttstk/', meaning:'统计数据', pos:'n'},
+  {word:'status', phonetic:'/stets/', meaning:'地位；状态', pos:'n'},
+  {word:'steady', phonetic:'/stedi/', meaning:'稳定的；稳步的', pos:'a'},
+  {word:'steak', phonetic:'/stek/', meaning:'牛排', pos:'n'},
+  {word:'steel', phonetic:'/sti:l/', meaning:'钢铁', pos:'n'},
+  {word:'steer', phonetic:'/st(r)/', meaning:'引导；驾驶', pos:'v/v'},
+  {word:'sticky', phonetic:'/stki/', meaning:'粘的；困难的', pos:'a'},
+  {word:'stimulate', phonetic:'/\'stmjlet/', meaning:'刺激；激发', pos:'v'},
+  {word:'sting', phonetic:'/st/', meaning:'叮，蜇；刺痛', pos:'v/n'},
+  {word:'stir', phonetic:'/st: (r)/', meaning:'搅拌；激发', pos:'v'},
+  {word:'straightforward', phonetic:'/stretf:wd/', meaning:'直截了当的；简单的', pos:'a'},
+  {word:'strategic', phonetic:'/strti:dk/', meaning:'战略的', pos:'a'},
+  {word:'strategy', phonetic:'/str�tdi/', meaning:'策略，战略', pos:'n'},
+  {word:'strength', phonetic:'/stre/', meaning:'力量；优点', pos:'n'},
+  {word:'strengthen', phonetic:'/stren/', meaning:'加强，增强', pos:'v'},
+  {word:'stretch', phonetic:'/stret/', meaning:'伸展；延伸', pos:'v/n'},
+  {word:'strike', phonetic:'/strak/', meaning:'打击；罢工；给...印象', pos:'v'},
+  {word:'string', phonetic:'/str/', meaning:'线；弦；一串', pos:'n/v'},
+  {word:'strive', phonetic:'/strav/', meaning:'努力，奋斗', pos:'v'},
+  {word:'structure', phonetic:'/strkt(r)/', meaning:'结构；构造', pos:'n'},
+  {word:'stuff', phonetic:'/stf/', meaning:'东西；填满', pos:'n/v'},
+  {word:'subject', phonetic:'/sbdkt/', meaning:'主题；学科；受...影响的', pos:'n/a'},
+  {word:'submarine', phonetic:'/sbmri:n/', meaning:'潜水艇', pos:'a/n'},
+  {word:'submerge', phonetic:'/sbm:d/', meaning:'淹没，潜入水中', pos:'v'},
+  {word:'submit', phonetic:'/sbmt/', meaning:'提交；屈服', pos:'v'},
+  {word:'subsequent', phonetic:'/sbskwnt/', meaning:'随后的，后来的', pos:'a'},
+  {word:'substance', phonetic:'/sbstns/', meaning:'物质；实质', pos:'n'},
+  {word:'substantial', phonetic:'/sbst�nl/', meaning:'大量的；实质的', pos:'a'},
+  {word:'substitute', phonetic:'/sbsttju:t/', meaning:'替代品；替代', pos:'n/v'},
+  {word:'successive', phonetic:'/sksesv/', meaning:'连续的', pos:'a'},
+  {word:'sufficient', phonetic:'/sfnt/', meaning:'足够的，充分的', pos:'a'},
+  {word:'summit', phonetic:'/smt/', meaning:'峰会；山顶', pos:'n'},
+  {word:'superficial', phonetic:'/su:pfl/', meaning:'肤浅的；表面的', pos:'a'},
+  {word:'superior', phonetic:'/su:pri(r)/', meaning:'优越的；上级；优等', pos:'a'},
+  {word:'supplement', phonetic:'/splmnt/', meaning:'补充；增刊', pos:'n'},
+  {word:'supreme', phonetic:'/su: \'prm/', meaning:'最高的；最重要的', pos:'a'},
+  {word:'surface', phonetic:'/s:fs/', meaning:'表面；外表', pos:'n'},
+  {word:'surge', phonetic:'/s:d/', meaning:'激增；汹涌', pos:'v'},
+  {word:'surrounding', phonetic:'/srand/', meaning:'周围的；环境', pos:'a'},
+  {word:'suspect', phonetic:'/sspekt/', meaning:'怀疑；嫌疑犯', pos:'v'},
+  {word:'suspend', phonetic:'/sspend/', meaning:'暂停；悬挂', pos:'v'},
+  {word:'sustain', phonetic:'/ssten/', meaning:'维持；支撑；承受', pos:'v'},
+  {word:'swallow', phonetic:'/swl/', meaning:'吞咽；燕子', pos:'n/v'},
+  {word:'sway', phonetic:'/swe/', meaning:'摇摆；影响', pos:'v'},
+  {word:'swear', phonetic:'/swe(r)/', meaning:'发誓；咒骂', pos:'v'},
+  {word:'sweater', phonetic:'/swet(r)/', meaning:'毛衣', pos:'n'},
+  {word:'sweep', phonetic:'/swi:p/', meaning:'打扫；席卷', pos:'v'},
+  {word:'swell', phonetic:'/swel/', meaning:'膨胀；肿胀', pos:'v'},
+  {word:'swing', phonetic:'/sw/', meaning:'摇摆；秋千', pos:'v/n'},
+  {word:'switch', phonetic:'/swt/', meaning:'开关；转换', pos:'n/v'},
+  {word:'sympathetic', phonetic:'/smpetk/', meaning:'同情的；赞同的', pos:'a'},
+  {word:'sympathize', phonetic:'/smpaz/', meaning:'同情；赞同', pos:'v'},
+  {word:'symptom', phonetic:'/smptm/', meaning:'症状；征兆', pos:'n'},
+  {word:'synthetic', phonetic:'/snetk/', meaning:'合成的，人造的', pos:'a'},
+  {word:'tackle', phonetic:'/t�kl/', meaning:'处理； tackle；装备', pos:'v'},
+  {word:'tailor', phonetic:'/tel(r)/', meaning:'裁缝；定制', pos:'n/v'},
+  {word:'tale', phonetic:'/tel/', meaning:'故事，传说', pos:'n'},
+  {word:'tame', phonetic:'/tem/', meaning:'驯服的；驯服', pos:'a/v'},
+  {word:'tangible', phonetic:'/t�ndbl/', meaning:'有形的；可触摸的', pos:'a'},
+  {word:'tap', phonetic:'/t�p/', meaning:'水龙头；轻敲', pos:'n/v'},
+  {word:'technical', phonetic:'/teknkl/', meaning:'技术的', pos:'a'},
+  {word:'technique', phonetic:'/tekni:k/', meaning:'技术，技巧', pos:'n'},
+  {word:'tedious', phonetic:'/tidis/', meaning:'冗长乏味的', pos:'a'},
+  {word:'telegram', phonetic:'/telgr�m/', meaning:'电报', pos:'n'},
+  {word:'temper', phonetic:'/temp(r)/', meaning:'脾气； temper；缓和', pos:'n/v'},
+  {word:'temporary', phonetic:'/temprri/', meaning:'暂时的', pos:'a'},
+  {word:'temptation', phonetic:'/tempten/', meaning:'诱惑', pos:'n'},
+  {word:'tense', phonetic:'/tens/', meaning:'紧张的；时态', pos:'a/v/n'},
+  {word:'tension', phonetic:'/tenn/', meaning:'紧张；张力', pos:'n'},
+  {word:'terminal', phonetic:'/t:mnl/', meaning:'终端；末端的；终点站', pos:'a/n'},
+  {word:'territory', phonetic:'/tertri/', meaning:'领土；领域', pos:'n'},
+  {word:'terror', phonetic:'/ter(r)/', meaning:'恐怖', pos:'n'},
+  {word:'theoretical', phonetic:'/retkl/', meaning:'理论上的', pos:'a'},
+  {word:'theory', phonetic:'/ri/', meaning:'理论', pos:'n'},
+  {word:'therapy', phonetic:'/erpi/', meaning:'治疗', pos:'n'},
+  {word:'thick', phonetic:'/k/', meaning:'厚的；浓的', pos:'a'},
+  {word:'thief', phonetic:'/i:f/', meaning:'小偷', pos:'n'},
+  {word:'thorough', phonetic:'/r/', meaning:'彻底的；周全的', pos:'a'},
+  {word:'thought', phonetic:'/:t/', meaning:'思想；想法', pos:'n'},
+  {word:'thoughtful', phonetic:'/:tfl/', meaning:'深思的；体贴的', pos:'a'},
+  {word:'threaten', phonetic:'/retn/', meaning:'威胁', pos:'v'},
+  {word:'thrive', phonetic:'/rav/', meaning:'繁荣，兴旺', pos:'v'},
+  {word:'throat', phonetic:'/rt/', meaning:'喉咙', pos:'n'},
+  {word:'throughout', phonetic:'/ru:at/', meaning:'贯穿；到处', pos:'prep'},
+  {word:'throw', phonetic:'/r/', meaning:'投掷，扔', pos:'v'},
+  {word:'thrust', phonetic:'/rst/', meaning:'猛推；刺；推力', pos:'v/n'},
+  {word:'thumb', phonetic:'/m/', meaning:'拇指', pos:'n/v'},
+  {word:'thunder', phonetic:'/nd(r)/', meaning:'雷声；打雷', pos:'n/v'},
+  {word:'tidy', phonetic:'/tadi/', meaning:'整洁的；整理', pos:'a/v'},
+  {word:'tight', phonetic:'/tat/', meaning:'紧的；紧密的', pos:'a'},
+  {word:'tin', phonetic:'/tn/', meaning:'锡；罐头', pos:'n'},
+  {word:'tip', phonetic:'/tp/', meaning:'小费；尖端；提示', pos:'n'},
+  {word:'tire', phonetic:'/ta(r)/', meaning:'轮胎；使疲劳', pos:'v'},
+  {word:'tobacco', phonetic:'/tb�k/', meaning:'烟草', pos:'n'},
+  {word:'token', phonetic:'/tkn/', meaning:'标志；代币；象征性的', pos:'n/a'},
+  {word:'tolerance', phonetic:'/tlrns/', meaning:'容忍；公差', pos:'n'},
+  {word:'tolerant', phonetic:'/tlrnt/', meaning:'宽容的', pos:'a'},
+  {word:'tolerate', phonetic:'/tlret/', meaning:'容忍', pos:'v'},
+  {word:'tongue', phonetic:'/t/', meaning:'舌头；语言', pos:'n'},
+  {word:'torch', phonetic:'/t:t/', meaning:'手电筒；火炬', pos:'n'},
+  {word:'toss', phonetic:'/ts/', meaning:'抛，掷', pos:'v'},
+  {word:'tough', phonetic:'/tf/', meaning:'艰难的；坚强的；硬的', pos:'a'},
+  {word:'trace', phonetic:'/tres/', meaning:'追踪；痕迹；微量', pos:'n/v'},
+  {word:'trademark', phonetic:'/tredm:k/', meaning:'商标', pos:'n'},
+  {word:'tragedy', phonetic:'/tr�ddi/', meaning:'悲剧', pos:'n'},
+  {word:'trail', phonetic:'/trel/', meaning:'小路；痕迹；追踪', pos:'n/v'},
+  {word:'transaction', phonetic:'/tr�nz�kn/', meaning:'交易；事务', pos:'n'},
+  {word:'transfer', phonetic:'/tr�nsf:(r)/', meaning:'转移；调动；转乘', pos:'v/n'},
+  {word:'transit', phonetic:'/\'tr�nst/', meaning:'运输；中转', pos:'n'},
+  {word:'transition', phonetic:'/tr�nzn/', meaning:'过渡，转变', pos:'n'},
+  {word:'transmission', phonetic:'/tr�nsmn/', meaning:'传输；传播', pos:'n'},
+  {word:'transmit', phonetic:'/tr�nsmt/', meaning:'传输；传播', pos:'v'},
+  {word:'transparent', phonetic:'/tr�nsp�rnt/', meaning:'透明的', pos:'a'},
+  {word:'trap', phonetic:'/tr�p/', meaning:'陷阱；诱捕', pos:'n/v'},
+  {word:'trash', phonetic:'/tr�/', meaning:'垃圾；丢弃', pos:'n/v'},
+  {word:'treasure', phonetic:'/tre(r)/', meaning:'财宝；珍视', pos:'n/v'},
+  {word:'treaty', phonetic:'/tri:ti/', meaning:'条约，协定', pos:'n'},
+  {word:'tremble', phonetic:'/trembl/', meaning:'颤抖', pos:'v'},
+  {word:'tremendous', phonetic:'/trmends/', meaning:'巨大的；极好的', pos:'a'},
+  {word:'trial', phonetic:'/tral/', meaning:'审判；试验', pos:'n'},
+  {word:'trifle', phonetic:'/trafl/', meaning:'小事；少量', pos:'n'},
+  {word:'trigger', phonetic:'/trg(r)/', meaning:'扳机；触发', pos:'n/v'},
+  {word:'trim', phonetic:'/trm/', meaning:'修剪；整齐的', pos:'a'},
+  {word:'triumph', phonetic:'/tramf/', meaning:'胜利；成功', pos:'n/v'},
+  {word:'troop', phonetic:'/tru:p/', meaning:'军队；一群', pos:'n/v'},
+  {word:'troublesome', phonetic:'/trblsm/', meaning:'麻烦的，令人烦恼的', pos:'a'},
+  {word:'trunk', phonetic:'/trk/', meaning:'树干；后备箱；象鼻', pos:'n'},
+  {word:'tube', phonetic:'/[tju:b/', meaning:'管子；地铁；管道', pos:'n'},
+  {word:'tunnel', phonetic:'/tnl/', meaning:'隧道', pos:'n'},
+  {word:'twin', phonetic:'/twn/', meaning:'双胞胎的；双胞胎之一', pos:'n/a'},
+  {word:'twist', phonetic:'/twst/', meaning:'扭曲；转动；转折', pos:'v'},
+  {word:'type', phonetic:'/tap/', meaning:'类型；打字', pos:'n/v'},
+  {word:'typical', phonetic:'/tpkl/', meaning:'典型的', pos:'a'},
+  {word:'ultimate', phonetic:'/ltmt/', meaning:'最终的；终极', pos:'a'},
+  {word:'unconscious', phonetic:'/nkns/', meaning:'无意识的；昏迷的', pos:'a'},
+  {word:'undergo', phonetic:'/ndg/', meaning:'经历，经受', pos:'v'},
+  {word:'undergraduate', phonetic:'/ndgr�dut/', meaning:'本科生', pos:'n'},
+  {word:'underline', phonetic:'/ndlan/', meaning:'下划线；强调', pos:'v'},
+  {word:'undermine', phonetic:'/ndman/', meaning:'削弱，破坏', pos:'v'},
+  {word:'underneath', phonetic:'/ndni:/', meaning:'在...下面；底部', pos:'prep'},
+  {word:'undertake', phonetic:'/ndtek/', meaning:'承担；从事', pos:'v'},
+  {word:'unique', phonetic:'/ju\'n:k/', meaning:'独特的', pos:'a'},
+  {word:'universal', phonetic:'/ju:nv:sl/', meaning:'普遍的；宇宙的', pos:'a'},
+  {word:'upper', phonetic:'/p(r)/', meaning:'上面的；上层的', pos:'a'},
+  {word:'upstairs', phonetic:'/pstez/', meaning:'楼上的；在楼上', pos:'a'},
+  {word:'upward', phonetic:'/pwd/', meaning:'向上的；向上地', pos:'a'},
+  {word:'urban', phonetic:'/\'b()n/', meaning:'城市的', pos:'a'},
+  {word:'urgent', phonetic:'/:dnt/', meaning:'紧急的', pos:'a'},
+  {word:'utility', phonetic:'/ju:tlti/', meaning:'实用；公用事业', pos:'n'},
+  {word:'utilize', phonetic:'/ju:tlaz/', meaning:'利用', pos:'v'},
+  {word:'utomate', phonetic:'/:tmet/', meaning:'使自动化', pos:'v'},
+  {word:'utter', phonetic:'/t(r)/', meaning:'完全的；说出', pos:'a/v'},
+  {word:'vacant', phonetic:'/veknt/', meaning:'空的；空缺的', pos:'a'},
+  {word:'vacuum', phonetic:'/v�kjum/', meaning:'真空', pos:'n'},
+  {word:'vague', phonetic:'/veg/', meaning:'模糊的，含糊的', pos:'a'},
+  {word:'vain', phonetic:'/ven/', meaning:'徒劳的；自负的', pos:'a'},
+  {word:'valid', phonetic:'/v�ld/', meaning:'有效的；合理的', pos:'a'},
+  {word:'valley', phonetic:'/v�li/', meaning:'山谷', pos:'n'},
+  {word:'vanish', phonetic:'/v�n/', meaning:'消失', pos:'v'},
+  {word:'variable', phonetic:'/veribl/', meaning:'可变的；变量', pos:'n/a'},
+  {word:'vast', phonetic:'/v:st/', meaning:'广阔的；大量的', pos:'a'},
+  {word:'vehicle', phonetic:'/vi:kl/', meaning:'车辆', pos:'n'},
+  {word:'velocity', phonetic:'/vlsti/', meaning:'速度', pos:'n'},
+  {word:'venture', phonetic:'/vent(r)/', meaning:'冒险；企业；冒险做', pos:'n/v'},
+  {word:'verify', phonetic:'/verfa/', meaning:'验证，核实', pos:'v'},
+  {word:'version', phonetic:'/v:n/', meaning:'版本；说法', pos:'n'},
+  {word:'vertical', phonetic:'/v:tkl/', meaning:'垂直的', pos:'a'},
+  {word:'veteran', phonetic:'/vetrn/', meaning:'老兵；经验丰富的', pos:'n'},
+  {word:'vibrate', phonetic:'/vabret/', meaning:'振动', pos:'v'},
+  {word:'viewpoint', phonetic:'/vju:pnt/', meaning:'观点，看法', pos:'n'},
+  {word:'vigor', phonetic:'/\'vg/', meaning:'活力，精力', pos:'n/v'},
+  {word:'violate', phonetic:'/valet/', meaning:'违反；侵犯', pos:'v'},
+  {word:'violent', phonetic:'/valnt/', meaning:'暴力的；剧烈的', pos:'a'},
+  {word:'virtually', phonetic:'/v:tuli/', meaning:'实际上；几乎', pos:'a'},
+  {word:'virtue', phonetic:'/v:tu:/', meaning:'美德；优点', pos:'n'},
+  {word:'virus', phonetic:'/vars/', meaning:'病毒', pos:'n'},
+  {word:'visa', phonetic:'/vi:z/', meaning:'签证', pos:'n'},
+  {word:'visible', phonetic:'/vzbl/', meaning:'可见的', pos:'a'},
+  {word:'vital', phonetic:'/vatl/', meaning:'至关重要的；生命的', pos:'a'},
+  {word:'vitamin', phonetic:'/vtmn/', meaning:'维生素', pos:'n'},
+  {word:'vivid', phonetic:'/vvd/', meaning:'生动的，鲜明的', pos:'a'},
+  {word:'vocation', phonetic:'/vken/', meaning:'职业；使命', pos:'n'},
+  {word:'volume', phonetic:'/vlju:m/', meaning:'音量；体积；卷', pos:'n'},
+  {word:'voluntary', phonetic:'/\'vlnt()ri/', meaning:'自愿的', pos:'a'},
+  {word:'voyage', phonetic:'/vd/', meaning:'航行，旅行', pos:'v'},
+  {word:'wage', phonetic:'/wed/', meaning:'工资；进行（战争等）', pos:'n'},
+  {word:'wander', phonetic:'/wnd(r)/', meaning:'漫步；走神', pos:'v'},
+  {word:'waterproof', phonetic:'/w:tpru:f/', meaning:'防水的', pos:'a'},
+  {word:'weave', phonetic:'/wi:v/', meaning:'编织', pos:'v'},
+  {word:'wedding', phonetic:'/wed/', meaning:'婚礼', pos:'n'},
+  {word:'welfare', phonetic:'/welfe(r)/', meaning:'福利', pos:'n'},
+  {word:'well-off', phonetic:'/wel\':f/', meaning:'富裕的', pos:'a'},
+  {word:'wheat', phonetic:'/wi:t/', meaning:'小麦', pos:'n'},
+  {word:'wheel', phonetic:'/wi:l/', meaning:'轮子', pos:'n'},
+  {word:'whereas', phonetic:'/wer�z/', meaning:'然而，而', pos:'conj'},
+  {word:'whisper', phonetic:'/wsp(r)/', meaning:'耳语，低声说', pos:'n/v'},
+  {word:'wicked', phonetic:'/wkd/', meaning:'邪恶的；淘气的', pos:'a'},
+  {word:'willing', phonetic:'/wl/', meaning:'愿意的', pos:'a'},
+  {word:'wine', phonetic:'/wan/', meaning:'葡萄酒', pos:'n'},
+  {word:'wipe', phonetic:'/wap/', meaning:'擦拭', pos:'v'},
+  {word:'wise', phonetic:'/waz/', meaning:'明智的', pos:'a'},
+  {word:'withdraw', phonetic:'/w�dr:/', meaning:'撤回；取款；撤退', pos:'v/v'},
+  {word:'within', phonetic:'/w�n/', meaning:'在...之内', pos:'prep'},
+  {word:'withstand', phonetic:'/w�st�nd/', meaning:'承受，经受', pos:'v'},
+  {word:'witness', phonetic:'/wtns/', meaning:'目击者；目击；见证', pos:'n/v'},
+  {word:'world-wide', phonetic:'/w:ldw\'ad/', meaning:'全世界的', pos:'a'},
+  {word:'worm', phonetic:'/w:m/', meaning:'蠕虫', pos:'n'},
+  {word:'worship', phonetic:'/w:p/', meaning:'崇拜；敬拜', pos:'n/v'},
+  {word:'wound', phonetic:'/wu:nd/', meaning:'伤口；受伤', pos:'n'},
+  {word:'wreck', phonetic:'/rek/', meaning:'破坏；残骸', pos:'n/v'},
+  {word:'wrist', phonetic:'/rst/', meaning:'手腕', pos:'n'},
+  {word:'yawn', phonetic:'/j:n/', meaning:'打哈欠；哈欠', pos:'v'},
+  {word:'ybody', phonetic:'/enibdi/', meaning:'任何人', pos:'pron/a/n'},
+  {word:'ything', phonetic:'/eni/', meaning:'任何事物', pos:'pron/a/n'},
+  {word:'yway', phonetic:'/eniwe/', meaning:'无论如何', pos:'a'},
+  {word:'zone', phonetic:'/zn/', meaning:'区域，地带', pos:'n'},
+];
+// Total: 1625 words with translations
+
+// ============================================================
+// 应用逻辑
+// ============================================================
+
+// ---- 状态 ----
+let quizQueue = [];
+let currentWord = null;
+let isReviewMode = false;
+let reviewQueue = [];
+let isAnswered = false;
+let wordHistory = [];        // 已浏览单词的历史记录
+let historyIndex = -1;       // 当前在历史中的位置
+let viewingHistory = false;  // 是否正在查看历史单词（非答题模式）
+let autoAdvanceTimer = null; // 答对后自动跳转的定时器
+
+// ---- 工具函数 ----
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getStats() {
+  try { return JSON.parse(localStorage.getItem('vocab_stats') || '{"total":0,"correct":0,"wrongIds":[]}'); }
+  catch(e) { return {total:0, correct:0, wrongIds:[]}; }
+}
+function saveStats(s) { localStorage.setItem('vocab_stats', JSON.stringify(s)); }
+
+function getWrongWords() {
+  try { return JSON.parse(localStorage.getItem('vocab_wrong') || '[]'); }
+  catch(e) { return []; }
+}
+function saveWrongWords(w) { localStorage.setItem('vocab_wrong', JSON.stringify(w)); }
+
+// ---- 发音 ----
+let _speakRef = null;      // 保持引用防止被浏览器垃圾回收
+let _voicesReady = false;  // 浏览器语音引擎是否已就绪
+
+// 预加载语音列表 — Chrome 异步加载 voices，必须等 voiceschanged 后才能正常发音
+function initSpeech() {
+  if (!('speechSynthesis' in window)) return;
+
+  const loadVoices = () => {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      _voicesReady = true;
+      // 预热：朗读一个极短的静默内容，激活 Chrome 的音频通道
+      const warm = new SpeechSynthesisUtterance('');
+      warm.volume = 0;
+      warm.rate = 1;
+      // 挑选一个英文语音，提升发音质量
+      const enVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      if (enVoice) warm.voice = enVoice;
+      speechSynthesis.speak(warm);
+    }
+  };
+
+  // Chrome 在首次调用 getVoices() 后才开始加载语音列表
+  loadVoices();
+  // 如果语音列表还未加载完成，监听 voiceschanged 事件
+  speechSynthesis.addEventListener('voiceschanged', loadVoices, { once: true });
+}
+
+function speak(word) {
+  if (!('speechSynthesis' in window)) return null;
+
+  // Chrome 的 speechSynthesis.cancel() 有严重 bug：
+  // cancel 后立即 speak 会导致单词开头被截断（只能听到后半部分）。
+  // 解决方案：不主动 cancel，直接 speak — 浏览器会自动中断前一个朗读。
+  // 仅在队列堵塞时（pending 状态）取消队列，此时 speaking 为 false，不会触发截断 bug。
+  if (speechSynthesis.pending && !speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+  }
+
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  u.rate = 0.75;
+  u.pitch = 1;
+  u.volume = 1;
+
+  // 如果有英文语音可用，指定使用它
+  if (_voicesReady) {
+    const voices = speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) u.voice = enVoice;
+  }
+
+  // 保持引用防止垃圾回收导致发音中断
+  _speakRef = u;
+  speechSynthesis.speak(u);
+
+  return u;
+}
+
+// ---- 选项生成 ----
+function generateOptions(correctWord) {
+  const correct = correctWord.meaning;
+  const others = WORD_BANK.filter(w => w.word !== correctWord.word && w.meaning !== correct);
+  const shuffled = shuffle(others);
+  const distractors = [];
+  const seenMeanings = new Set([correct]);
+  for (const w of shuffled) {
+    if (distractors.length >= 3) break;
+    if (!seenMeanings.has(w.meaning)) {
+      distractors.push(w.meaning);
+      seenMeanings.add(w.meaning);
+    }
+  }
+  while (distractors.length < 3) {
+    const fallback = '——';
+    if (!seenMeanings.has(fallback + distractors.length)) {
+      distractors.push(fallback + distractors.length);
+    }
+  }
+  return shuffle([correct, ...distractors]);
+}
+
+// ---- 加载新单词 ----
+function loadNewWord() {
+  isAnswered = false;
+  viewingHistory = false;
+  if (quizQueue.length === 0) quizQueue = shuffle(WORD_BANK);
+  currentWord = quizQueue.pop();
+
+  // 将当前单词加入历史记录
+  // 如果不在历史末尾，先截断再添加（防止分支历史）
+  if (historyIndex < wordHistory.length - 1) {
+    wordHistory = wordHistory.slice(0, historyIndex + 1);
+  }
+  wordHistory.push({word: currentWord.word, meaning: currentWord.meaning, phonetic: currentWord.phonetic, pos: currentWord.pos, answered: false});
+  historyIndex = wordHistory.length - 1;
+
+  // 使用 GSAP 淡入淡出动画更新内容
+  animateWordTransition(() => {
+    document.getElementById('word-text').textContent = currentWord.word;
+    document.getElementById('word-pos').textContent = currentWord.pos || '';
+    document.getElementById('feedback-msg').textContent = '';
+    document.getElementById('feedback-msg').className = 'msg';
+    document.getElementById('next-btn').classList.remove('show');
+
+    const opts = generateOptions(currentWord);
+    const optsDiv = document.getElementById('options');
+    optsDiv.innerHTML = '';
+    opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => selectAnswer(opt, btn));
+      optsDiv.appendChild(btn);
+    });
+
+    updateNavArrows();
+  });
+}
+
+// ---- 导航箭头：显示/隐藏 ----
+function updateNavArrows() {
+  const prevBtn = document.getElementById('nav-prev');
+  if (historyIndex <= 0) {
+    prevBtn.classList.add('hidden');
+  } else {
+    prevBtn.classList.remove('hidden');
+  }
+}
+
+// ---- 导航箭头：返回上一个单词 ----
+function goBack() {
+  if (historyIndex <= 0) return;
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+  historyIndex--;
+  viewingHistory = true;
+  showHistoryWord();
+}
+
+// ---- 导航箭头：前进到下一个单词 ----
+function goForward() {
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+  if (historyIndex < wordHistory.length - 1) {
+    // 历史中有下一个单词，前进到它
+    historyIndex++;
+    viewingHistory = true;
+    showHistoryWord();
+  } else {
+    // 已经在历史末尾，加载新单词
+    viewingHistory = false;
+    loadNewWord();
+  }
+}
+
+// ---- 显示历史中的单词 ----
+function showHistoryWord() {
+  const histWord = wordHistory[historyIndex];
+  currentWord = histWord;
+
+  animateWordTransition(() => {
+    document.getElementById('word-text').textContent = histWord.word;
+    document.getElementById('word-pos').textContent = histWord.pos || '';
+
+    const opts = generateOptions(histWord);
+    const optsDiv = document.getElementById('options');
+    optsDiv.innerHTML = '';
+
+    if (histWord.answered) {
+      // 已答过的单词：只读模式，显示正确答案
+      isAnswered = true;
+      document.getElementById('feedback-msg').textContent = '📋 已答单词 —— 正确答案：' + histWord.meaning;
+      document.getElementById('feedback-msg').className = 'msg';
+      document.getElementById('next-btn').classList.remove('show');
+
+      opts.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn disabled';
+        if (opt === histWord.meaning) {
+          btn.classList.add('show-correct');
+        }
+        btn.textContent = opt;
+        optsDiv.appendChild(btn);
+      });
+    } else {
+      // 未答过的单词：恢复答题模式
+      isAnswered = false;
+      viewingHistory = false;
+      document.getElementById('feedback-msg').textContent = '';
+      document.getElementById('feedback-msg').className = 'msg';
+      document.getElementById('next-btn').classList.remove('show');
+
+      opts.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => selectAnswer(opt, btn));
+        optsDiv.appendChild(btn);
+      });
+    }
+
+    updateNavArrows();
+  });
+}
+
+// ---- 选择答案 ----
+function selectAnswer(selected, btnEl) {
+  if (isAnswered) return;
+  isAnswered = true;
+
+  // 在历史中标记该单词已作答
+  if (historyIndex >= 0 && historyIndex < wordHistory.length && wordHistory[historyIndex].word === currentWord.word) {
+    wordHistory[historyIndex].answered = true;
+  }
+
+  const correct = currentWord.meaning;
+  const isCorrect = selected === correct;
+  const allBtns = document.querySelectorAll('#options .opt-btn');
+
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  const stats = getStats();
+  stats.total++;
+
+  if (isCorrect) {
+    btnEl.classList.add('correct');
+    stats.correct++;
+    document.getElementById('feedback-msg').textContent = '✅ 正确！太棒了！';
+    document.getElementById('feedback-msg').className = 'msg correct-msg';
+    saveStats(stats);
+    updateStats();
+    // 清除之前的定时器，设置新的自动跳转
+    if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = setTimeout(() => { autoAdvanceTimer = null; loadNewWord(); updateStats(); }, 1200);
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent === correct) b.classList.add('show-correct'); });
+    document.getElementById('feedback-msg').textContent = '❌ 正确答案是：' + correct;
+    document.getElementById('feedback-msg').className = 'msg wrong-msg';
+    document.getElementById('next-btn').classList.add('show');
+
+    // 加入错题本
+    const wrongWords = getWrongWords();
+    const existing = wrongWords.find(w => w.word === currentWord.word);
+    if (existing) {
+      existing.wrongCount++;
+      existing.lastWrong = new Date().toISOString().split('T')[0];
+    } else {
+      wrongWords.push({
+        word: currentWord.word,
+        meaning: currentWord.meaning,
+        phonetic: currentWord.phonetic,
+        pos: currentWord.pos,
+        wrongCount: 1,
+        lastWrong: new Date().toISOString().split('T')[0]
+      });
+    }
+    stats.wrongIds = wrongWords.map(w => w.word);
+    saveWrongWords(wrongWords);
+    saveStats(stats);
+    updateStats();
+    updateWrongBadge();
+    if (document.getElementById('page-wrong').classList.contains('active')) renderWrongList();
+  }
+}
+
+// ---- 下一题 ----
+document.getElementById('next-btn').addEventListener('click', () => {
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+  loadNewWord();
+  updateStats();
+});
+
+// ---- 导航箭头按钮 ----
+document.getElementById('nav-prev').addEventListener('click', goBack);
+document.getElementById('nav-next').addEventListener('click', goForward);
+
+// ---- 发音按钮 ----
+document.getElementById('speak-btn').addEventListener('click', () => {
+  if (!currentWord) return;
+  const btn = document.getElementById('speak-btn');
+  btn.classList.add('speaking');
+  const u = speak(currentWord.word);
+  if (u) u.onend = () => btn.classList.remove('speaking');
+  else btn.classList.remove('speaking');
+});
+
+// ---- 更新统计 ----
+function updateStats() {
+  const stats = getStats();
+  const wrongWords = getWrongWords();
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-correct').textContent = stats.correct;
+  document.getElementById('stat-wrong-count').textContent = wrongWords.length;
+  if (stats.total > 0) {
+    document.getElementById('stat-rate').textContent = Math.round(stats.correct / stats.total * 100) + '%';
+  }
+  updateWrongBadge();
+}
+
+// ---- 错题标记 ----
+function updateWrongBadge() {
+  const wrongWords = getWrongWords();
+  const badge = document.getElementById('wrong-badge');
+  if (wrongWords.length > 0) {
+    badge.textContent = wrongWords.length;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ---- 页面切换 ----
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const pageId = 'page-' + tab.dataset.page;
+    document.getElementById(pageId).classList.add('active');
+
+    if (tab.dataset.page === 'wrong') renderWrongList();
+    if (tab.dataset.page === 'search') document.getElementById('search-input').focus();
+  });
+});
+
+// ---- 错题本 ----
+function renderWrongList() {
+  const wrongWords = getWrongWords();
+  const listDiv = document.getElementById('wrong-list');
+  const emptyDiv = document.getElementById('wrong-empty');
+  const reviewArea = document.getElementById('wrong-review-area');
+
+  if (isReviewMode) return; // 复习中不刷新列表
+
+  reviewArea.style.display = 'none';
+
+  if (wrongWords.length === 0) {
+    listDiv.innerHTML = '';
+    emptyDiv.style.display = 'block';
+    return;
+  }
+
+  emptyDiv.style.display = 'none';
+  listDiv.innerHTML = '<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;font-size:16px;">共 ' + wrongWords.length + ' 个错题</span><button id="start-review-btn" style="padding:8px 18px;border-radius:20px;background:#f39c12;color:#fff;border:none;cursor:pointer;font-size:14px;font-family:inherit;">🔁 复习错题</button></div>';
+
+  wrongWords.forEach((w, i) => {
+    const div = document.createElement('div');
+    div.className = 'wrong-item';
+    div.innerHTML = '<div class="wrong-info"><div class="wrong-word">' + w.word + '</div><div class="wrong-meaning">' + w.meaning + '</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="wrong-count">✗' + w.wrongCount + '</span><button class="splay-btn" data-word="' + w.word + '">🔊</button></div>';
+    listDiv.appendChild(div);
+  });
+
+  // 绑定发音
+  listDiv.querySelectorAll('.splay-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      speak(btn.dataset.word);
+    });
+  });
+
+  // 绑定复习按钮
+  const reviewBtn = document.getElementById('start-review-btn');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', startReview);
+  }
+
+  // 绑定 GSAP 悬浮效果
+  addHoverEffect('.wrong-item');
+}
+
+// ---- 错题复习 ----
+function startReview() {
+  const wrongWords = getWrongWords();
+  if (wrongWords.length === 0) return;
+
+  isReviewMode = true;
+  reviewQueue = shuffle(wrongWords.map(w => {
+    const full = WORD_BANK.find(wb => wb.word === w.word);
+    return full || {word: w.word, meaning: w.meaning, phonetic: w.phonetic || '', pos: w.pos || ''};
+  }));
+
+  document.getElementById('wrong-list').style.display = 'none';
+  document.getElementById('wrong-empty').style.display = 'none';
+  document.getElementById('wrong-review-area').style.display = 'flex';
+
+  loadReviewWord();
+}
+
+function loadReviewWord() {
+  if (reviewQueue.length === 0) {
+    endReview();
+    return;
+  }
+
+  isAnswered = false;
+  currentWord = reviewQueue.pop();
+
+  const reviewCard = document.getElementById('review-card');
+
+  const updateReviewContent = () => {
+    document.getElementById('review-word').textContent = currentWord.word;
+    document.getElementById('review-pos').textContent = currentWord.pos || '';
+    document.getElementById('review-feedback-msg').textContent = '';
+    document.getElementById('review-feedback-msg').className = 'msg';
+    document.getElementById('review-next-btn').classList.remove('show');
+
+    const opts = generateOptions(currentWord);
+    const optsDiv = document.getElementById('review-options');
+    optsDiv.innerHTML = '';
+    opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => reviewSelectAnswer(opt, btn));
+      optsDiv.appendChild(btn);
+    });
+  };
+
+  if (typeof gsap === 'undefined') {
+    updateReviewContent();
+    return;
+  }
+
+  gsap.to(reviewCard, {
+    opacity: 0, y: -12, duration: 0.2, ease: 'power2.in',
+    onComplete: () => {
+      updateReviewContent();
+      gsap.fromTo(reviewCard,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' }
+      );
+      addHoverEffect('#review-options .opt-btn:not(.disabled)');
+    }
+  });
+}
+
+function reviewSelectAnswer(selected, btnEl) {
+  if (isAnswered) return;
+  isAnswered = true;
+
+  const correct = currentWord.meaning;
+  const isCorrect = selected === correct;
+  const allBtns = document.querySelectorAll('#review-options .opt-btn');
+  allBtns.forEach(b => b.classList.add('disabled'));
+
+  if (isCorrect) {
+    btnEl.classList.add('correct');
+    document.getElementById('review-feedback-msg').textContent = '✅ 正确！已从错题本移除';
+    document.getElementById('review-feedback-msg').className = 'msg correct-msg';
+
+    // 从错题本移除
+    const wrongWords = getWrongWords().filter(w => w.word !== currentWord.word);
+    saveWrongWords(wrongWords);
+    const stats = getStats();
+    stats.wrongIds = wrongWords.map(w => w.word);
+    saveStats(stats);
+    updateStats();
+
+    setTimeout(() => { loadReviewWord(); }, 1000);
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent === correct) b.classList.add('show-correct'); });
+    document.getElementById('review-feedback-msg').textContent = '❌ 正确答案是：' + correct;
+    document.getElementById('review-feedback-msg').className = 'msg wrong-msg';
+    document.getElementById('review-next-btn').classList.add('show');
+  }
+}
+
+document.getElementById('review-next-btn').addEventListener('click', () => loadReviewWord());
+
+document.getElementById('review-speak-btn').addEventListener('click', () => {
+  if (!currentWord) return;
+  speak(currentWord.word);
+});
+
+document.getElementById('exit-review-btn').addEventListener('click', endReview);
+
+function endReview() {
+  isReviewMode = false;
+  reviewQueue = [];
+  currentWord = null;
+  document.getElementById('wrong-review-area').style.display = 'none';
+  document.getElementById('wrong-list').style.display = 'block';
+  updateStats();
+  renderWrongList();
+}
+
+// ---- 搜索 ----
+document.getElementById('search-input').addEventListener('input', function() {
+  const query = this.value.trim().toLowerCase();
+  const resultsDiv = document.getElementById('search-results');
+  const noResults = document.getElementById('no-results');
+
+  if (!query) {
+    resultsDiv.innerHTML = '';
+    noResults.style.display = 'none';
+    return;
+  }
+
+  const matches = WORD_BANK.filter(w =>
+    w.word.toLowerCase().includes(query) || w.meaning.includes(query)
+  ).slice(0, 50);
+
+  if (matches.length === 0) {
+    resultsDiv.innerHTML = '';
+    noResults.style.display = 'block';
+    return;
+  }
+
+  noResults.style.display = 'none';
+  resultsDiv.innerHTML = '';
+  matches.forEach(w => {
+    const div = document.createElement('div');
+    div.className = 'search-item';
+    div.innerHTML = '<div class="word-info"><div class="sword">' + w.word + '</div><div class="smeaning">' + w.meaning + '</div></div><button class="splay-btn" data-word="' + w.word + '">🔊</button>';
+    resultsDiv.appendChild(div);
+  });
+
+  resultsDiv.querySelectorAll('.splay-btn').forEach(btn => {
+    btn.addEventListener('click', () => speak(btn.dataset.word));
+  });
+  // 绑定 GSAP 悬浮效果
+  addHoverEffect('.search-item');
+});
+
+// ---- 初始化 ----
+console.log('📚 四级核心词汇库已加载：' + WORD_BANK.length + ' 个单词');
+
+// ---- GSAP 悬浮浮起动画 ----
+function addHoverEffect(selector) {
+  if (typeof gsap === 'undefined') return; // GSAP 未加载时跳过
+  document.querySelectorAll(selector).forEach(el => {
+    // 避免重复绑定
+    if (el.dataset.gsapHover) return;
+    el.dataset.gsapHover = '1';
+
+    el.addEventListener('mouseenter', () => {
+      gsap.to(el, {
+        y: -6,
+        scale: 1.04,
+        boxShadow: '0 12px 36px rgba(0,0,0,0.22)',
+        duration: 0.35,
+        ease: 'power2.out'
+      });
+    });
+    el.addEventListener('mouseleave', () => {
+      gsap.to(el, {
+        y: 0,
+        scale: 1,
+        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
+        duration: 0.35,
+        ease: 'power2.out'
+      });
+    });
+  });
+}
+
+// ---- GSAP 单词切换淡入淡出 ----
+function animateWordTransition(updateFn) {
+  const card = document.getElementById('word-card');
+  if (typeof gsap === 'undefined') {
+    // GSAP 未加载时直接更新，无动画
+    updateFn();
+    return;
+  }
+  // 淡出
+  gsap.to(card, {
+    opacity: 0,
+    y: -12,
+    duration: 0.2,
+    ease: 'power2.in',
+    onComplete: () => {
+      updateFn();  // 更新卡片内容
+      // 淡入
+      gsap.fromTo(card,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' }
+      );
+      // 为新的选项按钮绑定悬浮效果
+      addHoverEffect('#options .opt-btn:not(.disabled)');
+    }
+  });
+}
+
+// 页面初始绑定悬浮效果
+addHoverEffect('.word-card');
+addHoverEffect('#options .opt-btn:not(.disabled)');
+
+initSpeech();        // 预加载语音引擎，修复 Chrome 发音截断问题
+updateStats();
+updateWrongBadge();
+loadNewWord();
+
+// 视频背景自动播放
+var bgVideo = document.getElementById('bg-video');
+if (bgVideo) {
+  bgVideo.play().catch(function() {
+    // 浏览器可能阻止自动播放，静默忽略
+  });
+}
+</script>
+</body>
+</html>
